@@ -1,15 +1,12 @@
-// Placeholder for clipboard item structure
 #pragma once
 #include <string>
-#include <vector>
+using namespace std;
 
-enum class ClipboardDataType { Text, Image, Files };
+enum class ItemType { Text };
 
 struct ClipboardItem {
-    int id = 0;
-    ClipboardDataType type;
-    std::string text;
-    std::string imagePath;
-    std::vector<std::string> files;
+    int id;
+    ItemType type;
+    string text;
     bool pinned = false;
 };
