@@ -1,10 +1,7 @@
-
 #include "clipboard_monitor/ClipboardMonitor.h"
 #include "history_manager/HistoryManager.h"
 #include "advanced_features/AdvancedFeatures.h"
-#include "./cli/CLI.h"
-#include <thread>
-using namespace std;
+#include "cli/CLI.h"
 
 int main() {
     HistoryManager history;
@@ -12,11 +9,11 @@ int main() {
     AdvancedFeatures adv(&history);
     CLI cli(&history, &adv);
 
-    thread monitorThread([&]() { monitor.startMonitoring(); });
+    // For terminal-only version, run monitor in same thread
+    monitor.startMonitoring();
 
-    // Run CLI in main thread
+    // Then allow user to interact
     cli.start();
 
-    monitorThread.detach();
     return 0;
 }

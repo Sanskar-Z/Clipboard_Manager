@@ -1,15 +1,31 @@
-#pragma once
-#include "../../include/Item.h"
+#ifndef HISTORY_MANAGER_H
+#define HISTORY_MANAGER_H
+
 #include <vector>
-using namespace std;
+#include <string>
+#include "../include/json.hpp" // JSON header
+using json = nlohmann::json;
+
+struct Item {
+    std::string content;
+    bool pinned = false;
+};
 
 class HistoryManager {
-public:
-    void addItem(const ClipboardItem& item);
-    void showHistory() const;
-    void deleteItem(int id);
-    void pinItem(int id);
-
 private:
-    vector<ClipboardItem> history_;
+    std::vector<Item> history;
+    std::string filename = "history.json";
+
+public:
+    HistoryManager();
+    void addItem(const std::string& item);
+    void showHistory();
+    std::vector<Item> search(const std::string& query);
+
+    void loadHistory();
+    void saveHistory();
+    void pinItem(int index);
+    void deleteItem(int index);
 };
+
+#endif

@@ -1,9 +1,15 @@
 #include "AdvancedFeatures.h"
 #include <iostream>
-#include <windows.h>
 
-AdvancedFeatures::AdvancedFeatures(HistoryManager* hm) : historyManager_(hm) {}
+AdvancedFeatures::AdvancedFeatures(HistoryManager* history) : history(history) {}
 
-void AdvancedFeatures::reCopy(int id) {
-    std::cout << "Re-copying item " << id << " (not yet implemented).\n";
+void AdvancedFeatures::search(const std::string& keyword) const {
+    auto results = history->search(keyword);
+    std::cout << "\nSearch results for \"" << keyword << "\":\n";
+    for (auto& item : results) {
+        std::cout << "- " << item.content;
+        if (item.pinned) std::cout << " [Pinned]";
+        std::cout << "\n";
+    }
+    if (results.empty()) std::cout << "No results found.\n";
 }

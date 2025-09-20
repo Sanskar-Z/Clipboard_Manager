@@ -1,15 +1,20 @@
-#pragma once
-#include "../../include/Item.h"
+#ifndef CLIPBOARD_MONITOR_H
+#define CLIPBOARD_MONITOR_H
+
 #include "../history_manager/HistoryManager.h"
 #include <string>
-using namespace std;
+#include <atomic>
 
 class ClipboardMonitor {
-public:
-    ClipboardMonitor(HistoryManager* hm);
-    void startMonitoring();
-
 private:
-    HistoryManager* historyManager_;
-    string lastText_;
+    HistoryManager* history;
+    std::string lastContent;
+    std::atomic<bool> running;
+
+public:
+    ClipboardMonitor(HistoryManager* history);
+    void startMonitoring();
+    void stopMonitoring();
 };
+
+#endif
