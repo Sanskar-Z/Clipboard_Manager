@@ -1,49 +1,40 @@
 #include "CLI.h"
 #include <iostream>
+using namespace std;
 
-CLI::CLI(HistoryManager* history, AdvancedFeatures* adv)
-    : history(history), adv(adv) {}
+CLI::CLI(HistoryManager* h) {
+    history = h;
+}
 
-void CLI::start() {
+void CLI::showMenu() {
     int choice;
-    do {
-        std::cout << "\n==== Clipboard Manager Menu ====\n";
-        std::cout << "1. Show History\n";
-        std::cout << "2. Search in History\n";
-        std::cout << "3. Pin/Unpin Item\n";
-        std::cout << "4. Delete Item\n";
-        std::cout << "5. Exit\n";
-        std::cout << "Enter choice: ";
-        std::cin >> choice;
-        std::cin.ignore();  // clear newline
+    while(true) {
+        cout << "\n==== Clipboard Manager Menu ====\n";
+        cout << "1. Show History\n2. Pin Item\n3. Unpin Item\n4. Delete Item\n5. Exit\n";
+        cout << "Enter choice: ";
+        cin >> choice;
 
-        if (choice == 1) {
-            history->showHistory();
-        } 
-        else if (choice == 2) {
-            std::string keyword;
-            std::cout << "Enter keyword: ";
-            std::getline(std::cin, keyword);
-            adv->search(keyword);
-        } 
-        else if (choice == 3) {
-            int index;
-            history->showHistory();
-            std::cout << "Enter item number to Pin/Unpin: ";
-            std::cin >> index;
-            std::cin.ignore();
-            history->pinItem(index - 1);
-            std::cout << "Item toggled pin status.\n";
-        } 
-        else if (choice == 4) {
-            int index;
-            history->showHistory();
-            std::cout << "Enter item number to delete: ";
-            std::cin >> index;
-            std::cin.ignore();
-            history->deleteItem(index - 1);
-            std::cout << "Item deleted.\n";
+        int id;
+        switch(choice) {
+            case 1:
+                history->showHistory();
+                break;
+            case 2:
+                cout << "Enter ID to Pin: "; cin >> id;
+                history->pinItem(id);
+                break;
+            case 3:
+                cout << "Enter ID to Unpin: "; cin >> id;
+                history->unpinItem(id);
+                break;
+            case 4:
+                cout << "Enter ID to Delete: "; cin >> id;
+                history->deleteItem(id);
+                break;
+            case 5:
+                return;
+            default:
+                cout << "Invalid choice\n";
         }
-
-    } while (choice != 5);
+    }
 }

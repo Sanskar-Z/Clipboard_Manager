@@ -1,20 +1,14 @@
-#ifndef CLIPBOARD_MONITOR_H
-#define CLIPBOARD_MONITOR_H
-
+#pragma once
 #include "../history_manager/HistoryManager.h"
 #include <string>
-#include <atomic>
 
 class ClipboardMonitor {
 private:
     HistoryManager* history;
-    std::string lastContent;
-    std::atomic<bool> running;
+    std::string lastText;
 
 public:
-    ClipboardMonitor(HistoryManager* history);
+    ClipboardMonitor(HistoryManager* h);
     void startMonitoring();
-    void stopMonitoring();
+    std::string getClipboardText();
 };
-
-#endif

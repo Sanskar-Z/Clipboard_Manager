@@ -1,15 +1,13 @@
-#ifndef ADVANCED_FEATURES_H
-#define ADVANCED_FEATURES_H
-
+#pragma once
+#include "../../include/Item.h"
 #include "../history_manager/HistoryManager.h"
+#include <string>
 
 class AdvancedFeatures {
 private:
     HistoryManager* history;
 
 public:
-    AdvancedFeatures(HistoryManager* history);
+    AdvancedFeatures(HistoryManager* hm) : history(hm) {}
     void search(const std::string& keyword) const;
 };
-
-#endif

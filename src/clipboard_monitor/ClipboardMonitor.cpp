@@ -1,31 +1,38 @@
 #include "ClipboardMonitor.h"
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef byte
 #include <iostream>
-#include <thread>
-#include <chrono>
 
-// For demo, we simulate clipboard input from user
-ClipboardMonitor::ClipboardMonitor(HistoryManager* history)
-    : history(history), running(false) {}
-
-void ClipboardMonitor::startMonitoring() {
-    running = true;
-    while (running) {
-        std::string input;
-        std::cout << "Enter text to copy (or 'exit' to stop): ";
-        std::getline(std::cin, input);
-
-        if (input == "exit") {
-            running = false;
-            break;
-        }
-
-        if (input != lastContent) {
-            lastContent = input;
-            history->addItem(input);
-        }
-    }
+ClipboardMonitor::ClipboardMonitor(HistoryManager* h) {
+    history = h;
+    lastText = "";
 }
 
-void ClipboardMonitor::stopMonitoring() {
-    running = false;
+std::string ClipboardMonitor::getClipboardText() {
+    if (!OpenClipboard(nullptr)) return "";
+
+    HANDLE hData = GetClipboardData(CF_TEXT);
+    if (!hData) { CloseClipboard(); return ""; }
+
+    char* pszText = static_cast<char*>(GlobalLock(hData));
+    if (!pszText) { CloseClipboard(); return ""; }
+
+    std::string text(pszText);
+    GlobalUnlock(hData);
+    CloseClipboard();
+    return text;
+}
+
+void ClipboardMonitor::startMonitoring() {
+    while(true) {
+        std::string currentText = getClipboardText();
+        if(!currentText.empty() && currentText != lastText) {
+            lastText = currentText;
+            ClipboardItem item{ history->getNextId(), ItemType::Text, currentText };
+            history->addItem(item);
+            std::cout << "Copied: " << currentText << "\n";
+        }
+        Sleep(500); // check clipboard every 0.5 sec
+    }
 }
