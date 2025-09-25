@@ -42,7 +42,7 @@ void HistoryManager::loadHistory() {
 
         try {
             ClipboardItem item;
-            item.id = std::stoi(idStr);   // may throw
+            item.id = std::stoi(idStr);  
             item.type = static_cast<ItemType>(std::stoi(typeStr));
             item.pinned = (pinnedStr == "1" || pinnedStr == "true");
             item.content = content;
@@ -64,10 +64,9 @@ int HistoryManager::getNextId() const { return history.empty() ? 1 : history.bac
 void HistoryManager::addItem(const ClipboardItem& item) {
     ClipboardItem newItem = item;
 
-    // Automatically assign next ID
     int nextId = 1;
     if (!history.empty()) {
-        // Find max ID in existing history
+
         nextId = std::max_element(
             history.begin(), history.end(),
             [](const ClipboardItem& a, const ClipboardItem& b) { return a.id < b.id; }
@@ -79,7 +78,7 @@ void HistoryManager::addItem(const ClipboardItem& item) {
     historyMap[newItem.id] = newItem;
     recentQueue.push_back(newItem);
 
-    if (recentQueue.size() > 20) // keep last 20 items
+    if (recentQueue.size() > 20) 
         recentQueue.pop_front();
 
     saveHistory();

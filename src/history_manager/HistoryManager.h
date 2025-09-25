@@ -23,7 +23,7 @@ private:
     std::vector<ClipboardItem> history;
     std::map<int, ClipboardItem> historyMap;
     std::unordered_set<int> pinnedIds;
-    std::deque<ClipboardItem> recentQueue; // last 20 items
+    std::deque<ClipboardItem> recentQueue;
     std::stack<ClipboardItem> undoStack;
 
     void saveHistory() const;

@@ -10,7 +10,7 @@ int main() {
 
     std::thread monitorThread([&monitor]() { monitor.startMonitoring(); });
 
-    cli.runMenu();  // use menu-driven CLI
+    cli.runMenu();
 
     monitorThread.join();
     return 0;
