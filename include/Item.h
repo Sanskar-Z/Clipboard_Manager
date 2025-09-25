@@ -1,12 +1,14 @@
 #pragma once
 #include <string>
-using namespace std;
 
-enum class ItemType { Text };
+enum class ItemType { Text = 0 };
 
 struct ClipboardItem {
     int id;
     ItemType type;
-    string text;
-    bool pinned = false;
+    bool pinned;
+    std::string content;
+
+    ClipboardItem(int _id = 0, ItemType _type = ItemType::Text, bool _pinned = false, const std::string& _content = "")
+        : id(_id), type(_type), pinned(_pinned), content(_content) {}
 };

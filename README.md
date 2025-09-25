@@ -14,3 +14,16 @@
 - Monitors clipboard text
 - Stores history with pin/unpin
 - Console-based GUI placeholder (can upgrade to Qt later)
+
+
+## Command 
+#### 1.
+```
+g++ -std=c++17 src/main.cpp src/cli/CLI.cpp src/history_manager/HistoryManager.cpp src/advanced_features/AdvancedFeatures.cpp src/clipboard_monitor/ClipboardMonitor.cpp -Iinclude -o clipboard_manager.exe
+```
+
+
+#### 2.
+```
+.\clipboard_manager.exe
+```

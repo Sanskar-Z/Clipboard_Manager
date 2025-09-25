@@ -3,12 +3,12 @@
 #include <string>
 
 class ClipboardMonitor {
-private:
-    HistoryManager* history;
-    std::string lastText;
-
 public:
-    ClipboardMonitor(HistoryManager* h);
+    ClipboardMonitor(HistoryManager& hist);
     void startMonitoring();
+
+private:
+    HistoryManager& history;
+    std::string lastClipboard;
     std::string getClipboardText();
 };

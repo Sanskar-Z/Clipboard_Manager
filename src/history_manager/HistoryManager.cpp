@@ -1,122 +1,146 @@
 #include "HistoryManager.h"
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <string>
-const string HISTORY_FILE = "history.txt";
+#include <algorithm>
 
-// Load history when object is created
-HistoryManager::HistoryManager() {
-    loadHistory();
-}
+const std::string HISTORY_FILE = "history.txt";
 
-// Save current history to file
+HistoryManager::HistoryManager() { loadHistory(); }
+
 void HistoryManager::saveHistory() const {
-    ofstream out(HISTORY_FILE);
-    if (!out) {
-        cerr << "Error: Could not open history file for writing!" << endl;
-        return;
-    }
-
-    for (const auto& item : history) {
-        out << item.id << "|" 
-            << (item.type == ItemType::Text ? "Text" : "Unknown") << "|" 
-            << item.text << "|" 
-            << item.pinned << "\n";
-    }
-
-    out.close();
+    std::ofstream out(HISTORY_FILE);
+    for (const auto& item : history)
+        out << item.id << "|" << static_cast<int>(item.type) << "|"
+            << item.pinned << "|" << item.content << "\n";
 }
 
-// Load history from file
 void HistoryManager::loadHistory() {
     history.clear();
-    std::ifstream inFile(HISTORY_FILE);
-    if (!inFile) return;
+    historyMap.clear();
+    pinnedIds.clear();
+    recentQueue.clear();
+
+    std::ifstream in(HISTORY_FILE);
+    if (!in.is_open()) return;
 
     std::string line;
-    while (std::getline(inFile, line)) {
-        if (line.empty()) continue; // skip blank lines
+    while (std::getline(in, line)) {
+        if (line.empty()) continue;
 
         std::istringstream ss(line);
-        std::string idStr, typeStr, pinnedStr, text;
+        std::string idStr, typeStr, pinnedStr, content;
 
-        if (std::getline(ss, idStr, '|') &&
-            std::getline(ss, typeStr, '|') &&
-            std::getline(ss, pinnedStr, '|') &&
-            std::getline(ss, text)) {
+        if (!std::getline(ss, idStr, '|') ||
+            !std::getline(ss, typeStr, '|') ||
+            !std::getline(ss, pinnedStr, '|') ||
+            !std::getline(ss, content)) 
+        {
+            std::cerr << "Skipping malformed line: " << line << "\n";
+            continue;
+        }
 
-            try {
-                ClipboardItem item;
-                item.id = std::stoi(idStr);                     // might throw
-                item.type = static_cast<ItemType>(std::stoi(typeStr));
-                item.pinned = (pinnedStr == "1" || pinnedStr == "true");
-                item.text = text;
+        try {
+            ClipboardItem item;
+            item.id = std::stoi(idStr);   // may throw
+            item.type = static_cast<ItemType>(std::stoi(typeStr));
+            item.pinned = (pinnedStr == "1" || pinnedStr == "true");
+            item.content = content;
 
-                history.push_back(item);
-            } catch (const std::exception& e) {
-                std::cerr << "Skipping invalid history line: " << line << "\n";
-            }
+            history.push_back(item);
+            historyMap[item.id] = item;
+            if (item.pinned) pinnedIds.insert(item.id);
+            recentQueue.push_back(item);
+        } catch (const std::exception& e) {
+            std::cerr << "Skipping invalid line (stoi failed): " << line << "\n";
+            continue;
         }
     }
 }
+
+
+int HistoryManager::getNextId() const { return history.empty() ? 1 : history.back().id + 1; }
 
 void HistoryManager::addItem(const ClipboardItem& item) {
     ClipboardItem newItem = item;
-    newItem.id = getNextId();
+
+    // Automatically assign next ID
+    int nextId = 1;
+    if (!history.empty()) {
+        // Find max ID in existing history
+        nextId = std::max_element(
+            history.begin(), history.end(),
+            [](const ClipboardItem& a, const ClipboardItem& b) { return a.id < b.id; }
+        )->id + 1;
+    }
+    newItem.id = nextId;
+
     history.push_back(newItem);
+    historyMap[newItem.id] = newItem;
+    recentQueue.push_back(newItem);
+
+    if (recentQueue.size() > 20) // keep last 20 items
+        recentQueue.pop_front();
+
     saveHistory();
 }
 
-void HistoryManager::showHistory() const {
-    cout << "\n--- Clipboard History ---\n";
-    for (const auto& item : history) {
-        cout << item.id << ". "  << item.text << (item.pinned ? " [Pinned]" : " ") << "\n";
+
+void HistoryManager::deleteItem(int id) {
+    auto it = std::find_if(history.begin(), history.end(), [id](const ClipboardItem& item){ return item.id == id; });
+    if (it != history.end()) {
+        undoStack.push(*it);
+        history.erase(it);
+        historyMap.erase(id);
+        pinnedIds.erase(id);
     }
-    cout << "--------------------------\n";
+    saveHistory();
 }
 
-int HistoryManager::getNextId() const {
-    return history.size() + 1;
-}
-
-const vector<ClipboardItem>& HistoryManager::getItems() const {
-    return history;
+void HistoryManager::undoDelete() {
+    if (!undoStack.empty()) {
+        ClipboardItem item = undoStack.top();
+        undoStack.pop();
+        history.push_back(item);
+        historyMap[item.id] = item;
+        if (item.pinned) pinnedIds.insert(item.id);
+        recentQueue.push_back(item);
+        saveHistory();
+    }
 }
 
 void HistoryManager::pinItem(int id) {
-    for (auto& item : history) {
-        if (item.id == id) {
-            item.pinned = true;
-            break;
-        }
+    if (historyMap.count(id)) {
+        historyMap[id].pinned = true;
+        pinnedIds.insert(id);
+        saveHistory();
     }
-    saveHistory();
 }
 
 void HistoryManager::unpinItem(int id) {
-    for (auto& item : history) {
-        if (item.id == id) {
-            item.pinned = false;
-            break;
-        }
+    if (historyMap.count(id)) {
+        historyMap[id].pinned = false;
+        pinnedIds.erase(id);
+        saveHistory();
     }
-    saveHistory();
 }
 
-void HistoryManager::deleteItem(int id) {
-    for (auto it = history.begin(); it != history.end(); ++it) {
-        if (it->id == id) {
-            history.erase(it);
-            break;
-        }
+void HistoryManager::showHistory() const {
+    std::cout << "\n--- Clipboard History ---\n";
+    for (const auto& item : history) {
+        std::cout << item.id << ". " << item.content;
+        if (item.pinned) std::cout << " [Pinned]";
+        std::cout << "\n";
     }
+    std::cout << "-------------------------\n";
+}
 
-    // Reassign IDs (serial numbers)
-    for (size_t i = 0; i < history.size(); i++) {
-        history[i].id = i + 1;
+const std::vector<ClipboardItem>& HistoryManager::getAllItems() const { return history; }
+
+std::vector<ClipboardItem> HistoryManager::search(const std::string& query) const {
+    std::vector<ClipboardItem> results;
+    for (const auto& item : history) {
+        if (item.content.find(query) != std::string::npos) results.push_back(item);
     }
-
-    saveHistory();
+    return results;
 }
