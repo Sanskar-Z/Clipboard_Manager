@@ -1,0 +1,213 @@
+{
+  "name": "clipboard-multi",
+  "displayName": "clipboard-multi",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.105.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "clipboard.copy0",
+        "title": "Copy Slot 0"
+      },
+      {
+        "command": "clipboard.copy1",
+        "title": "Copy Slot 1"
+      },
+      {
+        "command": "clipboard.copy2",
+        "title": "Copy Slot 2"
+      },
+      {
+        "command": "clipboard.copy3",
+        "title": "Copy Slot 3"
+      },
+      {
+        "command": "clipboard.copy4",
+        "title": "Copy Slot 4"
+      },
+      {
+        "command": "clipboard.copy5",
+        "title": "Copy Slot 5"
+      },
+      {
+        "command": "clipboard.copy6",
+        "title": "Copy Slot 6"
+      },
+      {
+        "command": "clipboard.copy7",
+        "title": "Copy Slot 7"
+      },
+      {
+        "command": "clipboard.copy8",
+        "title": "Copy Slot 8"
+      },
+      {
+        "command": "clipboard.copy9",
+        "title": "Copy Slot 9"
+      },
+      {
+        "command": "clipboard.paste0",
+        "title": "Paste Slot 0"
+      },
+      {
+        "command": "clipboard.paste1",
+        "title": "Paste Slot 1"
+      },
+      {
+        "command": "clipboard.paste2",
+        "title": "Paste Slot 2"
+      },
+      {
+        "command": "clipboard.paste3",
+        "title": "Paste Slot 3"
+      },
+      {
+        "command": "clipboard.paste4",
+        "title": "Paste Slot 4"
+      },
+      {
+        "command": "clipboard.paste5",
+        "title": "Paste Slot 5"
+      },
+      {
+        "command": "clipboard.paste6",
+        "title": "Paste Slot 6"
+      },
+      {
+        "command": "clipboard.paste7",
+        "title": "Paste Slot 7"
+      },
+      {
+        "command": "clipboard.paste8",
+        "title": "Paste Slot 8"
+      },
+      {
+        "command": "clipboard.paste9",
+        "title": "Paste Slot 9"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "clipboard.copy0",
+        "key": "ctrl+0",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.paste0",
+        "key": "alt+0",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.copy1",
+        "key": "ctrl+1",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.paste1",
+        "key": "alt+1",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.copy2",
+        "key": "ctrl+2",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.paste2",
+        "key": "alt+2",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.copy3",
+        "key": "ctrl+3",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.paste3",
+        "key": "alt+3",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.copy4",
+        "key": "ctrl+4",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.paste4",
+        "key": "alt+4",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.copy5",
+        "key": "ctrl+5",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.paste5",
+        "key": "alt+5",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.copy6",
+        "key": "ctrl+6",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.paste6",
+        "key": "alt+6",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.copy7",
+        "key": "ctrl+7",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.paste7",
+        "key": "alt+7",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.copy8",
+        "key": "ctrl+8",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.paste8",
+        "key": "alt+8",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.copy9",
+        "key": "ctrl+9",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "clipboard.paste9",
+        "key": "alt+9",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.105.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "eslint": "^9.36.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
