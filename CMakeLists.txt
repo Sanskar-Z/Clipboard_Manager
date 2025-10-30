@@ -15,3 +15,8 @@ set(SOURCES
 )
 
 add_executable(clipboard_manager ${SOURCES})
+
+# Link Windows Shell libraries for AppData path functionality
+if(WIN32)
+    target_link_libraries(clipboard_manager PRIVATE shell32 shlwapi)
+endif()

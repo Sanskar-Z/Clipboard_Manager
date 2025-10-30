@@ -3,16 +3,47 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <shlobj.h> // For SHGetFolderPath
+#include <shlwapi.h> // For path manipulation
 
-const std::string HISTORY_FILE = "history.txt";
+const std::string APP_DATA_FOLDER = "ClipboardManager";
+const std::string HISTORY_FILENAME = "history.txt";
+
+std::string GetHistoryFilePath() {
+    char path[MAX_PATH];
+    
+    // Get the Roaming AppData directory
+    if (SHGetFolderPathA(NULL, CSIDL_APPDATA, NULL, 0, path) != S_OK) {
+        // Fallback to current directory if AppData is not accessible
+        return HISTORY_FILENAME;
+    }
+
+    std::string app_data_path = path;
+    app_data_path += "\\";
+    app_data_path += APP_DATA_FOLDER;
+
+    // Create the directory if it doesn't exist
+    CreateDirectoryA(app_data_path.c_str(), NULL);
+
+    app_data_path += "\\";
+    app_data_path += HISTORY_FILENAME;
+
+    return app_data_path;
+}
 
 HistoryManager::HistoryManager() { loadHistory(); }
 
 void HistoryManager::saveHistory() const {
-    std::ofstream out(HISTORY_FILE);
-    for (const auto& item : history)
+    std::ofstream out(GetHistoryFilePath());
+    if (!out.is_open()) {
+        std::cerr << "Failed to open history file for writing\n";
+        return;
+    }
+
+    for (const auto& item : history) {
         out << item.id << "|" << static_cast<int>(item.type) << "|"
             << item.pinned << "|" << item.content << "\n";
+    }
 }
 
 void HistoryManager::loadHistory() {
@@ -21,7 +52,7 @@ void HistoryManager::loadHistory() {
     pinnedIds.clear();
     recentQueue.clear();
 
-    std::ifstream in(HISTORY_FILE);
+    std::ifstream in(GetHistoryFilePath());
     if (!in.is_open()) return;
 
     std::string line;
@@ -66,7 +97,6 @@ void HistoryManager::addItem(const ClipboardItem& item) {
 
     int nextId = 1;
     if (!history.empty()) {
-
         nextId = std::max_element(
             history.begin(), history.end(),
             [](const ClipboardItem& a, const ClipboardItem& b) { return a.id < b.id; }
@@ -82,6 +112,39 @@ void HistoryManager::addItem(const ClipboardItem& item) {
         recentQueue.pop_front();
 
     saveHistory();
+}
+
+void HistoryManager::setSlot(int slot, const std::string& content) {
+    // Remove any existing item with this slot number
+    auto it = std::remove_if(history.begin(), history.end(),
+        [slot](const ClipboardItem& item) { return item.id == slot; });
+    history.erase(it, history.end());
+    
+    // Remove from maps
+    historyMap.erase(slot);
+    pinnedIds.erase(slot);
+
+    // Create new item with the specified slot number as ID
+    ClipboardItem item{slot, ItemType::Text, true, content};
+    
+    // Add to collections
+    history.push_back(item);
+    historyMap[slot] = item;
+    pinnedIds.insert(slot);  // Slots are always pinned
+    
+    saveHistory();
+}
+
+ClipboardItem HistoryManager::getSlot(int slot) const {
+    auto it = std::find_if(history.begin(), history.end(),
+        [slot](const ClipboardItem& item) { return item.id == slot; });
+    
+    if (it != history.end()) {
+        return *it;
+    }
+    
+    // Return empty item if slot not found
+    return ClipboardItem{slot, ItemType::Text, false, ""};
 }
 
 

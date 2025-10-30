@@ -12,6 +12,8 @@ public:
     HistoryManager();
     void addItem(const ClipboardItem& item);
     void deleteItem(int id);
+    void setSlot(int slot, const std::string& content);  
+    ClipboardItem getSlot(int slot) const; 
     void undoDelete();
     void pinItem(int id);
     void unpinItem(int id);

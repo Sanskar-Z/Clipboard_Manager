@@ -100,7 +100,7 @@ build CMakeFiles/clipboard_manager.dir/src/history_manager/HistoryManager.cpp.ob
 build clipboard_manager.exe: CXX_EXECUTABLE_LINKER__clipboard_manager_Debug CMakeFiles/clipboard_manager.dir/src/main.cpp.obj CMakeFiles/clipboard_manager.dir/src/cli/CLI.cpp.obj CMakeFiles/clipboard_manager.dir/src/clipboard_monitor/ClipboardMonitor.cpp.obj CMakeFiles/clipboard_manager.dir/src/advanced_features/AdvancedFeatures.cpp.obj CMakeFiles/clipboard_manager.dir/src/history_manager/HistoryManager.cpp.obj
   CONFIG = Debug
   FLAGS = -g
-  LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  LINK_LIBRARIES = -lshell32  -lshlwapi  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\clipboard_manager.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
