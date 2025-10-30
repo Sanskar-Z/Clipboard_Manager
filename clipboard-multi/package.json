@@ -9,199 +9,123 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:clipboardHistory",
+    "onCommand:clipboardHistory.captureCopy"
+  ],
   "main": "./extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "clipboard-history-container",
+          "title": "Clipboard History",
+          "icon": "$(clippy)"
+        }
+      ]
+    },
+    "views": {
+      "clipboard-history-container": [
+        {
+          "id": "clipboardHistory",
+          "name": "Clipboard History"
+        }
+        ,
+        {
+          "id": "clipboardSearch",
+          "name": "Clipboard Search"
+        }
+      ]
+    },
     "commands": [
-      {
-        "command": "clipboard.copy0",
-        "title": "Copy Slot 0"
-      },
-      {
-        "command": "clipboard.copy1",
-        "title": "Copy Slot 1"
-      },
-      {
-        "command": "clipboard.copy2",
-        "title": "Copy Slot 2"
-      },
-      {
-        "command": "clipboard.copy3",
-        "title": "Copy Slot 3"
-      },
-      {
-        "command": "clipboard.copy4",
-        "title": "Copy Slot 4"
-      },
-      {
-        "command": "clipboard.copy5",
-        "title": "Copy Slot 5"
-      },
-      {
-        "command": "clipboard.copy6",
-        "title": "Copy Slot 6"
-      },
-      {
-        "command": "clipboard.copy7",
-        "title": "Copy Slot 7"
-      },
-      {
-        "command": "clipboard.copy8",
-        "title": "Copy Slot 8"
-      },
-      {
-        "command": "clipboard.copy9",
-        "title": "Copy Slot 9"
-      },
-      {
-        "command": "clipboard.paste0",
-        "title": "Paste Slot 0"
-      },
-      {
-        "command": "clipboard.paste1",
-        "title": "Paste Slot 1"
-      },
-      {
-        "command": "clipboard.paste2",
-        "title": "Paste Slot 2"
-      },
-      {
-        "command": "clipboard.paste3",
-        "title": "Paste Slot 3"
-      },
-      {
-        "command": "clipboard.paste4",
-        "title": "Paste Slot 4"
-      },
-      {
-        "command": "clipboard.paste5",
-        "title": "Paste Slot 5"
-      },
-      {
-        "command": "clipboard.paste6",
-        "title": "Paste Slot 6"
-      },
-      {
-        "command": "clipboard.paste7",
-        "title": "Paste Slot 7"
-      },
-      {
-        "command": "clipboard.paste8",
-        "title": "Paste Slot 8"
-      },
-      {
-        "command": "clipboard.paste9",
-        "title": "Paste Slot 9"
-      }
+      { "command": "clipboardHistory.refresh", "title": "Refresh Clipboard History", "icon": "$(refresh)" },
+      { "command": "clipboardHistory.copy", "title": "Copy from Clipboard History", "icon": "$(copy)" },
+      { "command": "clipboardHistory.add", "title": "Add item to history", "icon": "$(add)" },
+      { "command": "clipboardHistory.delete", "title": "Delete item from history", "icon": "$(trash)" },
+      { "command": "clipboardHistory.pin", "title": "Pin/Unpin item" },
+      { "command": "clipboardHistory.undoDelete", "title": "Undo last delete" },
+      { "command": "clipboardHistory.show", "title": "Show full history" },
+      { "command": "clipboardHistory.search", "title": "Search history" },
+      { "command": "clipboardHistory.openSearch", "title": "Open search view" },
+      { "command": "clipboardHistory.copyMultiple", "title": "Copy multiple selected items" },
+      { "command": "clipboardHistory.captureCopy", "title": "Capture Ctrl+C and add to history" },
+      { "command": "clipboardHistory.paste", "title": "Paste from history item" }
     ],
     "keybindings": [
-      {
-        "command": "clipboard.copy0",
-        "key": "ctrl+0",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.paste0",
-        "key": "alt+0",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.copy1",
-        "key": "ctrl+1",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.paste1",
-        "key": "alt+1",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.copy2",
-        "key": "ctrl+2",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.paste2",
-        "key": "alt+2",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.copy3",
-        "key": "ctrl+3",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.paste3",
-        "key": "alt+3",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.copy4",
-        "key": "ctrl+4",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.paste4",
-        "key": "alt+4",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.copy5",
-        "key": "ctrl+5",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.paste5",
-        "key": "alt+5",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.copy6",
-        "key": "ctrl+6",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.paste6",
-        "key": "alt+6",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.copy7",
-        "key": "ctrl+7",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.paste7",
-        "key": "alt+7",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.copy8",
-        "key": "ctrl+8",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.paste8",
-        "key": "alt+8",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.copy9",
-        "key": "ctrl+9",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "clipboard.paste9",
-        "key": "alt+9",
-        "when": "editorTextFocus"
-      }
+      { "command": "clipboard.copy0", "key": "ctrl+0", "when": "editorTextFocus" },
+      { "command": "clipboard.paste0", "key": "alt+0", "when": "editorTextFocus" },
+      { "command": "clipboard.copy1", "key": "ctrl+1", "when": "editorTextFocus" },
+      { "command": "clipboard.paste1", "key": "alt+1", "when": "editorTextFocus" },
+      { "command": "clipboard.copy2", "key": "ctrl+2", "when": "editorTextFocus" },
+      { "command": "clipboard.paste2", "key": "alt+2", "when": "editorTextFocus" },
+      { "command": "clipboard.copy3", "key": "ctrl+3", "when": "editorTextFocus" },
+      { "command": "clipboard.paste3", "key": "alt+3", "when": "editorTextFocus" },
+      { "command": "clipboard.copy4", "key": "ctrl+4", "when": "editorTextFocus" },
+      { "command": "clipboard.paste4", "key": "alt+4", "when": "editorTextFocus" },
+      { "command": "clipboard.copy5", "key": "ctrl+5", "when": "editorTextFocus" },
+      { "command": "clipboard.paste5", "key": "alt+5", "when": "editorTextFocus" },
+      { "command": "clipboard.copy6", "key": "ctrl+6", "when": "editorTextFocus" },
+      { "command": "clipboard.paste6", "key": "alt+6", "when": "editorTextFocus" },
+      { "command": "clipboard.copy7", "key": "ctrl+7", "when": "editorTextFocus" },
+      { "command": "clipboard.paste7", "key": "alt+7", "when": "editorTextFocus" },
+      { "command": "clipboard.copy8", "key": "ctrl+8", "when": "editorTextFocus" },
+      { "command": "clipboard.paste8", "key": "alt+8", "when": "editorTextFocus" },
+      { "command": "clipboard.copy9", "key": "ctrl+9", "when": "editorTextFocus" },
+      { "command": "clipboard.paste9", "key": "alt+9", "when": "editorTextFocus" },
+      { "command": "clipboardHistory.captureCopy", "key": "ctrl+c", "when": "editorTextFocus" },
+      { "command": "clipboardHistory.copyMultiple", "key": "ctrl+c", "when": "view == clipboardSearch" }
     ]
+    ,
+    "menus": {
+      "view/title": [
+        {
+          "command": "clipboardHistory.refresh",
+          "when": "view == clipboardHistory",
+          "group": "navigation"
+        }
+      ],
+      "view/item/inline": [
+        {
+          "command": "clipboardHistory.copy",
+          "when": "view == clipboardHistory",
+          "group": "inline"
+        },
+        {
+          "command": "clipboardHistory.pin",
+          "when": "view == clipboardHistory",
+          "group": "inline"
+        },
+        {
+          "command": "clipboardHistory.delete",
+          "when": "view == clipboardHistory",
+          "group": "inline"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "clipboardHistory.copy",
+          "when": "view == clipboardHistory && viewItem == historyItem",
+          "group": "navigation"
+        },
+        {
+          "command": "clipboardHistory.pin",
+          "when": "view == clipboardHistory && viewItem == historyItem",
+          "group": "navigation"
+        },
+        {
+          "command": "clipboardHistory.delete",
+          "when": "view == clipboardHistory && viewItem == historyItem",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "vscode-test"
   },
+  
   "devDependencies": {
     "@types/vscode": "^1.105.0",
     "@types/mocha": "^10.0.10",
