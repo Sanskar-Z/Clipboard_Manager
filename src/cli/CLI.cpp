@@ -1,24 +1,38 @@
-#include "CLI.h"
+#include <cstdio>
 #include <iostream>
 #include <string>
+#include <filesystem>
+#include "CLI.h"
+#include <cstring> 
 
-CLI::CLI(HistoryManager& historyManager) : history(historyManager) {}
+using namespace std;
+
+CLI::CLI(const string &dataDir)
+    : m_dataDir(dataDir), history(dataDir) {
+    filesystem::create_directories(m_dataDir);
+}
+
+int CLI::runCommandLine(int argc, char** argv) {
+    if (argc > 1) {
+        string command = argv[1];
+        handleCommand(command);
+        return 0;
+    }
+    runMenu();
+    return 0;
+}
 
 void CLI::runMenu() {
-    int choice;
-    do {
-        std::cout << "\n=== Clipboard Manager Menu ===\n";
-        std::cout << "1. Add item\n";
-        std::cout << "2. Delete item\n";
-        std::cout << "3. Pin item\n";
-        std::cout << "4. Unpin item\n";
-        std::cout << "5. Undo last delete\n";
-        std::cout << "6. Show history\n";
-        std::cout << "7. Search\n";
-        std::cout << "0. Exit\n";
-        std::cout << "Enter your choice: ";
-        std::cin >> choice;
-        std::cin.ignore(); // discard newline
+    while (true) {
+        showMenu();
+        int choice;
+        printf("\nEnter choice: ");
+        if (scanf("%d", &choice) != 1) {
+            printf("Invalid input.\n");
+            while (getchar() != '\n'); // clear buffer
+            continue;
+        }
+        getchar(); // clear newline
 
         switch (choice) {
             case 1: addItem(); break;
@@ -28,61 +42,111 @@ void CLI::runMenu() {
             case 5: undoDelete(); break;
             case 6: showHistory(); break;
             case 7: searchItems(); break;
-            case 0: std::cout << "Exiting...\n"; break;
-            default: std::cout << "Invalid choice!\n";
+            case 0: return;
+            default: printf("Invalid option!\n");
         }
-    } while (choice != 0);
+    }
+}
+
+void CLI::showMenu() {
+    printf("\n====== Clipboard Manager ======\n");
+    printf("1. Add Item\n");
+    printf("2. Delete Item\n");
+    printf("3. Pin Item\n");
+    printf("4. Unpin Item\n");
+    printf("5. Undo Delete\n");
+    printf("6. Show History\n");
+    printf("7. Search Items\n");
+    printf("0. Exit\n");
 }
 
 void CLI::addItem() {
-    std::string content;
-    std::cout << "Enter text to add: ";
-    std::getline(std::cin, content);
-    history.addItem(ClipboardItem{0, ItemType::Text, false, content});
+    char buffer[1024];
+    printf("Enter clipboard text: ");
+    getchar(); // clear newline
+    fgets(buffer, sizeof(buffer), stdin);
+    buffer[strcspn(buffer, "\n")] = 0; // remove newline
+
+    history.addItem(string(buffer));
+    printf("Added successfully!\n");
 }
 
 void CLI::deleteItem() {
     int id;
-    std::cout << "Enter ID to delete: ";
-    std::cin >> id;
-    std::cin.ignore();
-    history.deleteItem(id);
+    printf("Enter ID to delete: ");
+    if (scanf("%d", &id) != 1) {
+        printf("Invalid input.\n");
+        while (getchar() != '\n');
+        return;
+    }
+    getchar();
+
+    if (history.deleteItem(id)) printf("Deleted!\n");
+    else printf("ID not found.\n");
 }
 
 void CLI::pinItem() {
     int id;
-    std::cout << "Enter ID to pin: ";
-    std::cin >> id;
-    std::cin.ignore();
-    history.pinItem(id);
+    printf("Enter ID to pin: ");
+    if (scanf("%d", &id) != 1) {
+        printf("Invalid input.\n");
+        while (getchar() != '\n');
+        return;
+    }
+    getchar();
+
+    if (history.pinItem(id)) printf("Pinned!\n");
+    else printf("ID not found.\n");
 }
 
 void CLI::unpinItem() {
     int id;
-    std::cout << "Enter ID to unpin: ";
-    std::cin >> id;
-    std::cin.ignore();
-    history.unpinItem(id);
+    printf("Enter ID to unpin: ");
+    if (scanf("%d", &id) != 1) {
+        printf("Invalid input.\n");
+        while (getchar() != '\n');
+        return;
+    }
+    getchar();
+
+    if (history.unpinItem(id)) printf("Unpinned!\n");
+    else printf("ID not found.\n");
 }
 
 void CLI::undoDelete() {
-    history.undoDelete();
+    if (history.undoDelete()) printf("Undo successful!\n");
+    else printf("Nothing to undo.\n");
 }
 
 void CLI::showHistory() {
-    history.showHistory();
+    auto items = history.readHistory();
+    printf("\n--- Clipboard History ---\n");
+    int idx = 0;
+    for (const auto& item : items) {
+        printf("[%d] %s", idx++, item.content.c_str());
+        if (item.pinned) printf(" (Pinned)");
+        printf("\n");
+    }
 }
 
 void CLI::searchItems() {
-    std::string query;
-    std::cout << "Enter search keyword: ";
-    std::getline(std::cin, query);
-    auto results = history.search(query);
-    if (results.empty()) {
-        std::cout << "No matches found.\n";
+    char keyword[256];
+    printf("Enter keyword: ");
+    getchar();
+    fgets(keyword, sizeof(keyword), stdin);
+    keyword[strcspn(keyword, "\n")] = 0;
+
+    auto results = history.search(string(keyword));
+    for (const auto& item : results)
+        printf("%s - %s\n", item.timestamp.c_str(), item.content.c_str());
+}
+
+void CLI::handleCommand(const string &cmd) {
+    if (cmd == "history") {
+        showHistory();
+    } else if (cmd == "undo") {
+        undoDelete();
     } else {
-        std::cout << "Search results:\n";
-        for (const auto& item : results)
-            std::cout << item.id << ". " << item.content << (item.pinned ? " [Pinned]" : "") << "\n";
+        printf("Unknown command: %s\n", cmd.c_str());
     }
 }

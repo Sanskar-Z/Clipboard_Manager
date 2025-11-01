@@ -1,33 +1,27 @@
 const vscode = require('vscode');
 const path = require('path');
 const fs = require('fs');
+const historyBackend = require('./historyBackend');
 
-class ClipboardTreeItem extends vscode.TreeItem {
-    constructor(id, content, pinned) {
-        const shortContent = content.length > 40 ? content.substring(0, 40) + '...' : content;
-        // show id first so it's easy to operate from UI
-        super(`${id}. ${shortContent}`, vscode.TreeItemCollapsibleState.None);
-        this.id = id;
-        this.content = content;
-        this.tooltip = content;
+class ClipboardItem extends vscode.TreeItem {
+    constructor(label, collapsibleState, meta) {
+        super(label, collapsibleState);
+        this.meta = meta;
         this.command = {
-            command: 'clipboardHistory.paste',
-            title: 'Paste',
-            arguments: [content]
+            title: 'Open item',
+            command: 'clipboard.openItem',
+            arguments: [this.meta]
         };
-        // allow view/item menus and inline actions to target this item
-        this.contextValue = 'historyItem';
-        this.iconPath = pinned 
-            ? new vscode.ThemeIcon('pinned')
-            : new vscode.ThemeIcon('clippy');
+        this.contextValue = 'clipboardItem';
     }
 }
 
 class ClipboardDataProvider {
-    constructor(historyFile) {
+    constructor(historyPath, slotsDir) {
+        this.historyPath = historyPath;
+        this.slotsDir = slotsDir;
         this._onDidChangeTreeData = new vscode.EventEmitter();
         this.onDidChangeTreeData = this._onDidChangeTreeData.event;
-        this.historyFile = historyFile;
     }
 
     refresh() {
@@ -38,31 +32,47 @@ class ClipboardDataProvider {
         return element;
     }
 
-    getChildren() {
-        try {
-            if (!fs.existsSync(this.historyFile)) {
-                return Promise.resolve([]);
+    getChildren(element) {
+        if (!element) {
+            // root: two groups: Slots and History
+            const children = [];
+            // slots as top-level collapsible
+            const slotsNode = new ClipboardItem('Slots', vscode.TreeItemCollapsibleState.Collapsed, { type: 'slots' });
+            const historyNode = new ClipboardItem('History', vscode.TreeItemCollapsibleState.Collapsed, { type: 'history' });
+            return Promise.resolve([slotsNode, historyNode]);
+        } else {
+            if (element.meta && element.meta.type === 'slots') {
+                // return slot items
+                const arr = [];
+                for (let i = 0; i <= 9; ++i) {
+                    const p = path.join(this.slotsDir, `slot_${i}.txt`);
+                    let label = `Slot ${i} (empty)`;
+                    let content = '';
+                    if (fs.existsSync(p)) {
+                        try { content = fs.readFileSync(p, 'utf8'); } catch (e) { content = ''; }
+                        const preview = content.length > 60 ? content.slice(0, 57) + '...' : content;
+                        label = `Slot ${i}: ${preview}`;
+                    }
+                    const meta = { type: 'slot', index: i, content };
+                    const it = new ClipboardItem(label, vscode.TreeItemCollapsibleState.None, meta);
+                    it.tooltip = content;
+                    arr.push(it);
+                }
+                return Promise.resolve(arr);
+            } else if (element.meta && element.meta.type === 'history') {
+                const items = historyBackend.readHistory(this.historyPath);
+                const arr = items.map(it => {
+                    const preview = it.content.length > 80 ? it.content.slice(0, 77) + '...' : it.content;
+                    const label = `${it.pinned ? '📌 ' : ''}${preview}`;
+                    const meta = { type: 'historyItem', index: it.index, content: it.content, timestamp: it.timestamp, pinned: it.pinned };
+                    const ti = new ClipboardItem(label, vscode.TreeItemCollapsibleState.None, meta);
+                    ti.tooltip = `${it.timestamp}\n${it.content}`;
+                    return ti;
+                });
+                return Promise.resolve(arr);
             }
-
-            const content = fs.readFileSync(this.historyFile, 'utf8');
-            const items = content.split('\n')
-                .filter(line => line.trim())
-                .map(line => {
-                    const parts = line.split('|');
-                    if (parts.length < 4) return null;
-                    const id = parseInt(parts[0]);
-                    const pinned = parts[2] === '1' || parts[2] === 'true';
-                    // join remaining parts as content in case '|' appears in the text
-                    const text = parts.slice(3).join('|');
-                    return new ClipboardTreeItem(id, text, pinned);
-                })
-                .filter(x => x !== null);
-
-            return Promise.resolve(items);
-        } catch (error) {
-            console.error('Error reading clipboard history:', error);
-            return Promise.resolve([]);
         }
+        return Promise.resolve([]);
     }
 }
 

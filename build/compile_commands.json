@@ -1,32 +1,32 @@
 [
 {
   "directory": "D:/Coding/College_CP/Clipboard_Manager/build",
-  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -ID:/Coding/College_CP/Clipboard_Manager/include -g -std=gnu++17 -o CMakeFiles\\clipboard_manager.dir\\src\\main.cpp.obj -c D:\\Coding\\College_CP\\Clipboard_Manager\\src\\main.cpp",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -ID:/Coding/College_CP/Clipboard_Manager/src -g -std=gnu++17 -o CMakeFiles\\clipboard_manager.dir\\src\\main.cpp.obj -c D:\\Coding\\College_CP\\Clipboard_Manager\\src\\main.cpp",
   "file": "D:/Coding/College_CP/Clipboard_Manager/src/main.cpp",
   "output": "D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/clipboard_manager.dir/src/main.cpp.obj"
 },
 {
   "directory": "D:/Coding/College_CP/Clipboard_Manager/build",
-  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -ID:/Coding/College_CP/Clipboard_Manager/include -g -std=gnu++17 -o CMakeFiles\\clipboard_manager.dir\\src\\cli\\CLI.cpp.obj -c D:\\Coding\\College_CP\\Clipboard_Manager\\src\\cli\\CLI.cpp",
-  "file": "D:/Coding/College_CP/Clipboard_Manager/src/cli/CLI.cpp",
-  "output": "D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/clipboard_manager.dir/src/cli/CLI.cpp.obj"
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -ID:/Coding/College_CP/Clipboard_Manager/src -g -std=gnu++17 -o CMakeFiles\\clipboard_manager.dir\\src\\history_manager\\HistoryManager.cpp.obj -c D:\\Coding\\College_CP\\Clipboard_Manager\\src\\history_manager\\HistoryManager.cpp",
+  "file": "D:/Coding/College_CP/Clipboard_Manager/src/history_manager/HistoryManager.cpp",
+  "output": "D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/clipboard_manager.dir/src/history_manager/HistoryManager.cpp.obj"
 },
 {
   "directory": "D:/Coding/College_CP/Clipboard_Manager/build",
-  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -ID:/Coding/College_CP/Clipboard_Manager/include -g -std=gnu++17 -o CMakeFiles\\clipboard_manager.dir\\src\\clipboard_monitor\\ClipboardMonitor.cpp.obj -c D:\\Coding\\College_CP\\Clipboard_Manager\\src\\clipboard_monitor\\ClipboardMonitor.cpp",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -ID:/Coding/College_CP/Clipboard_Manager/src -g -std=gnu++17 -o CMakeFiles\\clipboard_manager.dir\\src\\clipboard_monitor\\ClipboardMonitor.cpp.obj -c D:\\Coding\\College_CP\\Clipboard_Manager\\src\\clipboard_monitor\\ClipboardMonitor.cpp",
   "file": "D:/Coding/College_CP/Clipboard_Manager/src/clipboard_monitor/ClipboardMonitor.cpp",
   "output": "D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/clipboard_manager.dir/src/clipboard_monitor/ClipboardMonitor.cpp.obj"
 },
 {
   "directory": "D:/Coding/College_CP/Clipboard_Manager/build",
-  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -ID:/Coding/College_CP/Clipboard_Manager/include -g -std=gnu++17 -o CMakeFiles\\clipboard_manager.dir\\src\\advanced_features\\AdvancedFeatures.cpp.obj -c D:\\Coding\\College_CP\\Clipboard_Manager\\src\\advanced_features\\AdvancedFeatures.cpp",
-  "file": "D:/Coding/College_CP/Clipboard_Manager/src/advanced_features/AdvancedFeatures.cpp",
-  "output": "D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/clipboard_manager.dir/src/advanced_features/AdvancedFeatures.cpp.obj"
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -ID:/Coding/College_CP/Clipboard_Manager/src -g -std=gnu++17 -o CMakeFiles\\clipboard_manager.dir\\src\\cli\\CLI.cpp.obj -c D:\\Coding\\College_CP\\Clipboard_Manager\\src\\cli\\CLI.cpp",
+  "file": "D:/Coding/College_CP/Clipboard_Manager/src/cli/CLI.cpp",
+  "output": "D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/clipboard_manager.dir/src/cli/CLI.cpp.obj"
 },
 {
   "directory": "D:/Coding/College_CP/Clipboard_Manager/build",
-  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -ID:/Coding/College_CP/Clipboard_Manager/include -g -std=gnu++17 -o CMakeFiles\\clipboard_manager.dir\\src\\history_manager\\HistoryManager.cpp.obj -c D:\\Coding\\College_CP\\Clipboard_Manager\\src\\history_manager\\HistoryManager.cpp",
-  "file": "D:/Coding/College_CP/Clipboard_Manager/src/history_manager/HistoryManager.cpp",
-  "output": "D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/clipboard_manager.dir/src/history_manager/HistoryManager.cpp.obj"
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -ID:/Coding/College_CP/Clipboard_Manager/src -g -std=gnu++17 -o CMakeFiles\\clipboard_manager.dir\\src\\advanced_features\\AdvancedFeatures.cpp.obj -c D:\\Coding\\College_CP\\Clipboard_Manager\\src\\advanced_features\\AdvancedFeatures.cpp",
+  "file": "D:/Coding/College_CP/Clipboard_Manager/src/advanced_features/AdvancedFeatures.cpp",
+  "output": "D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/clipboard_manager.dir/src/advanced_features/AdvancedFeatures.cpp.obj"
 }
 ]

@@ -1,208 +1,181 @@
 #include "HistoryManager.h"
-#include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
-#include <algorithm>
-#include <shlobj.h> // For SHGetFolderPath
-#include <shlwapi.h> // For path manipulation
+#include <chrono>
+#include <iomanip>
+#include <iostream>
+#include <nlohmann/json.hpp> // optional: if you want JSON; else simple custom format
 
-const std::string APP_DATA_FOLDER = "ClipboardManager";
-const std::string HISTORY_FILENAME = "history.txt";
+namespace fs = std::filesystem;
 
-std::string GetHistoryFilePath() {
-    char path[MAX_PATH];
-    
-    // Get the Roaming AppData directory
-    if (SHGetFolderPathA(NULL, CSIDL_APPDATA, NULL, 0, path) != S_OK) {
-        // Fallback to current directory if AppData is not accessible
-        return HISTORY_FILENAME;
-    }
-
-    std::string app_data_path = path;
-    app_data_path += "\\";
-    app_data_path += APP_DATA_FOLDER;
-
-    // Create the directory if it doesn't exist
-    CreateDirectoryA(app_data_path.c_str(), NULL);
-
-    app_data_path += "\\";
-    app_data_path += HISTORY_FILENAME;
-
-    return app_data_path;
-}
-
-HistoryManager::HistoryManager() { loadHistory(); }
-
-void HistoryManager::saveHistory() const {
-    std::ofstream out(GetHistoryFilePath());
-    if (!out.is_open()) {
-        std::cerr << "Failed to open history file for writing\n";
-        return;
-    }
-
-    for (const auto& item : history) {
-        out << item.id << "|" << static_cast<int>(item.type) << "|"
-            << item.pinned << "|" << item.content << "\n";
+HistoryManager::HistoryManager(const std::string &data_dir)
+    : m_dataDir(data_dir) {
+    if (!fs::exists(m_dataDir)) fs::create_directories(m_dataDir);
+    m_historyPath = (fs::path(m_dataDir) / "history.txt").string();
+    m_lastDeletedPath = (fs::path(m_dataDir) / ".clipboard_last_deleted.txt").string();
+    // Ensure slot directory
+    if (!fs::exists(fs::path(m_dataDir) / "slots")) {
+        fs::create_directories(fs::path(m_dataDir) / "slots");
     }
 }
 
-void HistoryManager::loadHistory() {
-    history.clear();
-    historyMap.clear();
-    pinnedIds.clear();
-    recentQueue.clear();
+static std::string now_iso8601() {
+    auto t = std::chrono::system_clock::now();
+    auto tt = std::chrono::system_clock::to_time_t(t);
+    std::tm tm;
+    localtime_s(&tm, &tt);
+    std::ostringstream ss;
+    ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+    return ss.str();
+}
 
-    std::ifstream in(GetHistoryFilePath());
-    if (!in.is_open()) return;
-
+std::vector<HistoryItem> HistoryManager::readHistory() {
+    std::vector<HistoryItem> out;
+    std::ifstream in(m_historyPath);
+    if (!in.is_open()) return out;
     std::string line;
     while (std::getline(in, line)) {
-        if (line.empty()) continue;
-
-        std::istringstream ss(line);
-        std::string idStr, typeStr, pinnedStr, content;
-
-        if (!std::getline(ss, idStr, '|') ||
-            !std::getline(ss, typeStr, '|') ||
-            !std::getline(ss, pinnedStr, '|') ||
-            !std::getline(ss, content)) 
-        {
-            std::cerr << "Skipping malformed line: " << line << "\n";
-            continue;
-        }
-
-        try {
-            ClipboardItem item;
-            item.id = std::stoi(idStr);  
-            item.type = static_cast<ItemType>(std::stoi(typeStr));
-            item.pinned = (pinnedStr == "1" || pinnedStr == "true");
-            item.content = content;
-
-            history.push_back(item);
-            historyMap[item.id] = item;
-            if (item.pinned) pinnedIds.insert(item.id);
-            recentQueue.push_back(item);
-        } catch (const std::exception& e) {
-            std::cerr << "Skipping invalid line (stoi failed): " << line << "\n";
-            continue;
+        // Format: TIMESTAMP ||| CONTENT (safe split)
+        auto sep = line.find(" ||| ");
+        if (sep != std::string::npos) {
+            HistoryItem it;
+            it.timestamp = line.substr(0, sep);
+            it.content = line.substr(sep + 5);
+            // pinned marker: if content begins with [PINNED]
+            if (it.content.rfind("[PINNED]", 0) == 0) {
+                it.pinned = true;
+                it.content = it.content.substr(8);
+            }
+            out.push_back(it);
+        } else {
+            // Fallback: treat full line as content
+            HistoryItem it;
+            it.timestamp = "";
+            it.content = line;
+            out.push_back(it);
         }
     }
+    return out;
 }
 
-
-int HistoryManager::getNextId() const { return history.empty() ? 1 : history.back().id + 1; }
-
-void HistoryManager::addItem(const ClipboardItem& item) {
-    ClipboardItem newItem = item;
-
-    int nextId = 1;
-    if (!history.empty()) {
-        nextId = std::max_element(
-            history.begin(), history.end(),
-            [](const ClipboardItem& a, const ClipboardItem& b) { return a.id < b.id; }
-        )->id + 1;
+bool HistoryManager::writeHistory(const std::vector<HistoryItem>& items) {
+    std::ofstream out(m_historyPath, std::ios::trunc);
+    if (!out.is_open()) return false;
+    for (const auto &it : items) {
+        std::string content = it.content;
+        if (it.pinned) content = std::string("[PINNED]") + content;
+        out << it.timestamp << " ||| " << content << "\n";
     }
-    newItem.id = nextId;
-
-    history.push_back(newItem);
-    historyMap[newItem.id] = newItem;
-    recentQueue.push_back(newItem);
-
-    if (recentQueue.size() > 20) 
-        recentQueue.pop_front();
-
-    saveHistory();
+    return true;
 }
 
-void HistoryManager::setSlot(int slot, const std::string& content) {
-    // Remove any existing item with this slot number
-    auto it = std::remove_if(history.begin(), history.end(),
-        [slot](const ClipboardItem& item) { return item.id == slot; });
-    history.erase(it, history.end());
-    
-    // Remove from maps
-    historyMap.erase(slot);
-    pinnedIds.erase(slot);
-
-    // Create new item with the specified slot number as ID
-    ClipboardItem item{slot, ItemType::Text, true, content};
-    
-    // Add to collections
-    history.push_back(item);
-    historyMap[slot] = item;
-    pinnedIds.insert(slot);  // Slots are always pinned
-    
-    saveHistory();
+bool HistoryManager::addItem(const std::string &text) {
+    auto items = readHistory();
+    HistoryItem it;
+    it.timestamp = now_iso8601();
+    it.content = text;
+    it.pinned = false;
+    items.insert(items.begin(), it); // newest at front
+    return writeHistory(items);
 }
 
-ClipboardItem HistoryManager::getSlot(int slot) const {
-    auto it = std::find_if(history.begin(), history.end(),
-        [slot](const ClipboardItem& item) { return item.id == slot; });
-    
-    if (it != history.end()) {
-        return *it;
+bool HistoryManager::deleteItem(size_t index) {
+    auto items = readHistory();
+    if (index >= items.size()) return false;
+    auto deleted = items[index];
+    // remove that item
+    items.erase(items.begin() + index);
+    if (!writeHistory(items)) return false;
+    saveLastDeleted(deleted);
+    return true;
+}
+
+bool HistoryManager::pinItem(size_t index) {
+    auto items = readHistory();
+    if (index >= items.size()) return false;
+    items[index].pinned = true;
+    return writeHistory(items);
+}
+
+bool HistoryManager::unpinItem(size_t index) {
+    auto items = readHistory();
+    if (index >= items.size()) return false;
+    items[index].pinned = false;
+    return writeHistory(items);
+}
+
+bool HistoryManager::saveLastDeleted(const HistoryItem &it) {
+    std::ofstream out(m_lastDeletedPath, std::ios::trunc);
+    if (!out.is_open()) return false;
+    out << it.timestamp << "\n";
+    out << it.content << "\n";
+    out << (it.pinned ? "1" : "0") << "\n";
+    return true;
+}
+
+std::optional<HistoryItem> HistoryManager::loadLastDeleted() {
+    std::ifstream in(m_lastDeletedPath);
+    if (!in.is_open()) return std::nullopt;
+    HistoryItem it;
+    if (!std::getline(in, it.timestamp)) return std::nullopt;
+    if (!std::getline(in, it.content)) return std::nullopt;
+    std::string pin;
+    if (!std::getline(in, pin)) return std::nullopt;
+    it.pinned = (pin == "1");
+    return it;
+}
+
+bool HistoryManager::undoDelete() {
+    auto maybe = loadLastDeleted();
+    if (!maybe.has_value()) return false;
+    auto it = maybe.value();
+    auto items = readHistory();
+    items.insert(items.begin(), it);
+    bool ok = writeHistory(items);
+    if (ok) {
+        // remove lastDeleted
+        std::error_code ec;
+        fs::remove(m_lastDeletedPath, ec);
     }
-    
-    // Return empty item if slot not found
-    return ClipboardItem{slot, ItemType::Text, false, ""};
+    return ok;
 }
 
-
-void HistoryManager::deleteItem(int id) {
-    auto it = std::find_if(history.begin(), history.end(), [id](const ClipboardItem& item){ return item.id == id; });
-    if (it != history.end()) {
-        undoStack.push(*it);
-        history.erase(it);
-        historyMap.erase(id);
-        pinnedIds.erase(id);
-    }
-    saveHistory();
+std::string HistoryManager::historyFilePath() const {
+    return m_historyPath;
 }
 
-void HistoryManager::undoDelete() {
-    if (!undoStack.empty()) {
-        ClipboardItem item = undoStack.top();
-        undoStack.pop();
-        history.push_back(item);
-        historyMap[item.id] = item;
-        if (item.pinned) pinnedIds.insert(item.id);
-        recentQueue.push_back(item);
-        saveHistory();
-    }
+std::string HistoryManager::slotFilePath(int slot) const {
+    std::ostringstream ss;
+    ss << (fs::path(m_dataDir) / "slots" / ("slot_" + std::to_string(slot) + ".txt")).string();
+    return ss.str();
 }
 
-void HistoryManager::pinItem(int id) {
-    if (historyMap.count(id)) {
-        historyMap[id].pinned = true;
-        pinnedIds.insert(id);
-        saveHistory();
-    }
+bool HistoryManager::setSlot(int slot, const std::string &text) {
+    if (slot < 0 || slot > 9) return false;
+    auto path = slotFilePath(slot);
+    std::ofstream out(path, std::ios::trunc | std::ios::binary);
+    if (!out.is_open()) return false;
+    out << text;
+    return true;
 }
 
-void HistoryManager::unpinItem(int id) {
-    if (historyMap.count(id)) {
-        historyMap[id].pinned = false;
-        pinnedIds.erase(id);
-        saveHistory();
-    }
+std::optional<std::string> HistoryManager::getSlot(int slot) {
+    if (slot < 0 || slot > 9) return std::nullopt;
+    auto path = slotFilePath(slot);
+    std::ifstream in(path, std::ios::binary);
+    if (!in.is_open()) return std::nullopt;
+    std::ostringstream ss;
+    ss << in.rdbuf();
+    return ss.str();
 }
 
-void HistoryManager::showHistory() const {
-    std::cout << "\n--- Clipboard History ---\n";
-    for (const auto& item : history) {
-        std::cout << item.id << ". " << item.content;
-        if (item.pinned) std::cout << " [Pinned]";
-        std::cout << "\n";
-    }
-    std::cout << "-------------------------\n";
-}
-
-const std::vector<ClipboardItem>& HistoryManager::getAllItems() const { return history; }
-
-std::vector<ClipboardItem> HistoryManager::search(const std::string& query) const {
-    std::vector<ClipboardItem> results;
-    for (const auto& item : history) {
-        if (item.content.find(query) != std::string::npos) results.push_back(item);
+std::vector<HistoryItem> HistoryManager::search(const std::string &keyword) {
+    auto items = readHistory();
+    std::vector<HistoryItem> results;
+    for (auto &it : items) {
+        if (it.content.find(keyword) != std::string::npos)
+            results.push_back(it);
     }
     return results;
 }
