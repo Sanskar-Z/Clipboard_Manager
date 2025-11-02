@@ -1,114 +1,117 @@
 const fs = require('fs');
 const path = require('path');
 
-function readHistory(filePath) {
-    if (!fs.existsSync(filePath)) return [];
-    const raw = fs.readFileSync(filePath, 'utf8');
-    const lines = raw.split(/\r?\n/).filter(l => l.trim().length);
-    return lines.map((l, idx) => {
-        const sep = ' ||| ';
-        const sidx = l.indexOf(sep);
-        if (sidx !== -1) {
-            let ts = l.substring(0, sidx);
-            let content = l.substring(sidx + sep.length);
-            let pinned = false;
-            if (content.startsWith('[PINNED]')) {
-                pinned = true;
-                content = content.substring(8);
-            }
-            return { index: idx, timestamp: ts, content, pinned };
-        } else {
-            return { index: idx, timestamp: '', content: l, pinned: false };
-        }
-    });
-}
+let HISTORY_FILE = '';
+let historyData = {
+  slots: {},
+  history: [],
+  pinned: []
+};
 
-function writeHistory(filePath, items) {
-    const lines = items.map(it => {
-        let content = it.content;
-        if (it.pinned) content = '[PINNED]' + content;
-        return `${it.timestamp} ||| ${content}`;
-    });
-    fs.writeFileSync(filePath, lines.join('\n') + (lines.length ? '\n' : ''), 'utf8');
-}
-
-function addItem(filePath, text) {
-    const items = readHistory(filePath);
-    const ts = new Date().toISOString().replace('T', ' ').split('.')[0];
-    items.unshift({ index: 0, timestamp: ts, content: text, pinned: false });
-    // reindex not strictly necessary
-    writeHistory(filePath, items);
-}
-
-function deleteItem(filePath, index) {
-    const items = readHistory(filePath);
-    if (index < 0 || index >= items.length) return false;
-    const removed = items.splice(index, 1);
-    writeHistory(filePath, items);
-    // save last deleted
-    const lastDeletedPath = path.join(path.dirname(filePath), '.clipboard_last_deleted.json');
-    fs.writeFileSync(lastDeletedPath, JSON.stringify(removed[0]), 'utf8');
-    return true;
-}
-
-function undoDelete(filePath) {
-    const lastDeletedPath = path.join(path.dirname(filePath), '.clipboard_last_deleted.json');
-    if (!fs.existsSync(lastDeletedPath)) return false;
-    const raw = fs.readFileSync(lastDeletedPath, 'utf8');
-    try {
-        const item = JSON.parse(raw);
-        const items = readHistory(filePath);
-        items.unshift(item);
-        writeHistory(filePath, items);
-        fs.unlinkSync(lastDeletedPath);
-        return true;
-    } catch (e) {
-        return false;
+function init(filePath) {
+  HISTORY_FILE = filePath;
+  try {
+    if (!fs.existsSync(HISTORY_FILE)) {
+      fs.writeFileSync(HISTORY_FILE, JSON.stringify(historyData, null, 2), 'utf8');
+    } else {
+      const data = fs.readFileSync(HISTORY_FILE, 'utf8');
+      try {
+        historyData = JSON.parse(data);
+      } catch (err) {
+        console.warn('[Clipboard Manager] Corrupt history file. Reinitializing.');
+        historyData = { slots: {}, history: [], pinned: [] };
+        saveFile();
+      }
     }
+  } catch (err) {
+    console.error('[Clipboard Manager] Failed to load history file:', err);
+  }
 }
 
-function pinItem(filePath, index) {
-    const items = readHistory(filePath);
-    if (index < 0 || index >= items.length) return false;
-    items[index].pinned = true;
-    writeHistory(filePath, items);
-    return true;
+function saveFile() {
+  try {
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(historyData, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[Clipboard Manager] Failed to save history file:', err);
+  }
 }
 
-function unpinItem(filePath, index) {
-    const items = readHistory(filePath);
-    if (index < 0 || index >= items.length) return false;
-    items[index].pinned = false;
-    writeHistory(filePath, items);
-    return true;
+function reload() {
+  try {
+    const data = fs.readFileSync(HISTORY_FILE, 'utf8');
+    historyData = JSON.parse(data);
+  } catch (err) {
+    console.error('[Clipboard Manager] Failed to reload history file:', err);
+  }
 }
 
-function readSlotFile(slotPath) {
-    try {
-        if (!fs.existsSync(slotPath)) return null;
-        return fs.readFileSync(slotPath, 'utf8');
-    } catch (e) {
-        return null;
-    }
+function saveToSlot(slot, text) {
+  if (!text) return;
+  historyData.slots[slot] = text;
+  addToHistory(text);
+  saveFile();
 }
 
-function setSlot(slotPath, slot, text) {
-    try {
-        fs.writeFileSync(slotPath, text, 'utf8');
-        return true;
-    } catch (e) {
-        return false;
-    }
+function getFromSlot(slot) {
+  return historyData.slots[slot] || null;
+}
+
+function addToHistory(text) {
+  if (!text || text.trim() === '') return;
+  historyData.history = historyData.history.filter(item => item !== text);
+  historyData.history.unshift(text);
+
+  if (historyData.history.length > 100) historyData.history.pop();
+  saveFile();
+}
+
+function pinItem(text) {
+  if (!text || historyData.pinned.includes(text)) return;
+  historyData.pinned.push(text);
+  saveFile();
+  reload();
+}
+
+function unpinItem(text) {
+  historyData.pinned = historyData.pinned.filter(item => item !== text);
+  saveFile();
+  reload();
+}
+
+function deleteItem(text) {
+  const before = historyData.history.length;
+  historyData.history = historyData.history.filter(item => item !== text);
+  historyData.pinned = historyData.pinned.filter(item => item !== text);
+  saveFile();
+  reload();
+  const after = historyData.history.length;
+
+  console.log(`[Clipboard Manager] Deleted "${text}". Items before: ${before}, after: ${after}`);
+}
+
+function search(query) {
+  if (!query) return [...historyData.history];
+  const lower = query.toLowerCase();
+  return historyData.history.filter(item => item.toLowerCase().includes(lower));
+}
+
+function getAll() {
+  return {
+    slots: { ...historyData.slots },
+    history: [...historyData.history],
+    pinned: [...historyData.pinned]
+  };
 }
 
 module.exports = {
-    readHistory,
-    writeHistory,
-    addItem,
-    deleteItem,
-    undoDelete,
-    pinItem,
-    unpinItem,
-    setSlot,
-    readSlotFile
+  init,
+  saveToSlot,
+  getFromSlot,
+  addToHistory,
+  pinItem,
+  unpinItem,
+  deleteItem,
+  search,
+  getAll,
+  reload
 };

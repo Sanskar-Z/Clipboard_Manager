@@ -1,12 +1,16 @@
 {
+  "type": "commonjs",
   "name": "clipboard-multi",
   "displayName": "Clipboard Manager (Activity Bar)",
-  "version": "0.0.2",
+  "version": "0.0.7",
   "publisher": "your-name",
+  "description": "A modern, user-friendly Clipboard Manager with multi-slot copy, pinning, search, and history management inside VS Code.",
   "engines": {
     "vscode": "^1.80.0"
   },
+  "icon": "images/icon.svg",
   "main": "./extension.js",
+  "activationEvents": ["*"],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -26,50 +30,79 @@
       ]
     },
     "commands": [
-      { "command": "clipboard.refresh", "title": "Refresh Clipboard History" },
-      { "command": "clipboard.paste", "title": "Paste from Slot" },
-      { "command": "clipboard.copy", "title": "Copy to Slot" },
-      { "command": "clipboard.setSlot", "title": "Set Slot (Text)" },
-      { "command": "clipboard.openSearch", "title": "Open Clipboard Search" },
-      { "command": "clipboard.pin", "title": "Pin item" },
-      { "command": "clipboard.unpin", "title": "Unpin item" },
-      { "command": "clipboard.delete", "title": "Delete item" },
-      { "command": "clipboard.undo", "title": "Undo delete" },
-      { "command": "clipboard.copyAndSave", "title": "Copy and Save to Clipboard History" }
+      { "command": "clipboard.refresh", "title": "🔄 Refresh Clipboard History" },
+      { "command": "clipboard.copy", "title": "📋 Copy to Slot" },
+      { "command": "clipboard.paste", "title": "📥 Paste from Slot" },
+      { "command": "clipboard.copyAndSave", "title": "💾 Copy and Save to History" },
+      { "command": "clipboard.pin", "title": "📌 Pin Item" },
+      { "command": "clipboard.unpin", "title": "📍 Unpin Item" },
+      { "command": "clipboard.delete", "title": "🗑️ Delete Item" },
+      { "command": "clipboard.search", "title": "🔍 Search Clipboard History" }
     ],
     "keybindings": [
-      { "key": "ctrl+0", "command": "clipboard.copy", "when": "editorTextFocus", "args": { "slot": 0 } },
-      { "key": "ctrl+1", "command": "clipboard.copy", "when": "editorTextFocus", "args": { "slot": 1 } },
-      { "key": "ctrl+2", "command": "clipboard.copy", "when": "editorTextFocus", "args": { "slot": 2 } },
-      { "key": "ctrl+3", "command": "clipboard.copy", "when": "editorTextFocus", "args": { "slot": 3 } },
-      { "key": "ctrl+4", "command": "clipboard.copy", "when": "editorTextFocus", "args": { "slot": 4 } },
-      { "key": "ctrl+5", "command": "clipboard.copy", "when": "editorTextFocus", "args": { "slot": 5 } },
-      { "key": "ctrl+6", "command": "clipboard.copy", "when": "editorTextFocus", "args": { "slot": 6 } },
-      { "key": "ctrl+7", "command": "clipboard.copy", "when": "editorTextFocus", "args": { "slot": 7 } },
-      { "key": "ctrl+8", "command": "clipboard.copy", "when": "editorTextFocus", "args": { "slot": 8 } },
-      { "key": "ctrl+9", "command": "clipboard.copy", "when": "editorTextFocus", "args": { "slot": 9 } },
-      { "key": "alt+0", "command": "clipboard.paste", "when": "editorTextFocus", "args": { "slot": 0 } },
-      { "key": "alt+1", "command": "clipboard.paste", "when": "editorTextFocus", "args": { "slot": 1 } },
-      { "key": "alt+2", "command": "clipboard.paste", "when": "editorTextFocus", "args": { "slot": 2 } },
-      { "key": "alt+3", "command": "clipboard.paste", "when": "editorTextFocus", "args": { "slot": 3 } },
-      { "key": "alt+4", "command": "clipboard.paste", "when": "editorTextFocus", "args": { "slot": 4 } },
-      { "key": "alt+5", "command": "clipboard.paste", "when": "editorTextFocus", "args": { "slot": 5 } },
-      { "key": "alt+6", "command": "clipboard.paste", "when": "editorTextFocus", "args": { "slot": 6 } },
-      { "key": "alt+7", "command": "clipboard.paste", "when": "editorTextFocus", "args": { "slot": 7 } },
-      { "key": "alt+8", "command": "clipboard.paste", "when": "editorTextFocus", "args": { "slot": 8 } },
-      { "key": "alt+9", "command": "clipboard.paste", "when": "editorTextFocus", "args": { "slot": 9 } },
-      { "key": "ctrl+c", "command": "clipboard.copyAndSave", "when": "editorTextFocus" }
+      { "key": "ctrl+0", "command": "clipboard.copy", "args": { "slot": 0 }, "when": "editorTextFocus" },
+      { "key": "ctrl+1", "command": "clipboard.copy", "args": { "slot": 1 }, "when": "editorTextFocus" },
+      { "key": "ctrl+2", "command": "clipboard.copy", "args": { "slot": 2 }, "when": "editorTextFocus" },
+      { "key": "ctrl+3", "command": "clipboard.copy", "args": { "slot": 3 }, "when": "editorTextFocus" },
+      { "key": "ctrl+4", "command": "clipboard.copy", "args": { "slot": 4 }, "when": "editorTextFocus" },
+      { "key": "ctrl+5", "command": "clipboard.copy", "args": { "slot": 5 }, "when": "editorTextFocus" },
+      { "key": "ctrl+6", "command": "clipboard.copy", "args": { "slot": 6 }, "when": "editorTextFocus" },
+      { "key": "ctrl+7", "command": "clipboard.copy", "args": { "slot": 7 }, "when": "editorTextFocus" },
+      { "key": "ctrl+8", "command": "clipboard.copy", "args": { "slot": 8 }, "when": "editorTextFocus" },
+      { "key": "ctrl+9", "command": "clipboard.copy", "args": { "slot": 9 }, "when": "editorTextFocus" },
+      { "key": "alt+0", "command": "clipboard.paste", "args": { "slot": 0 }, "when": "editorTextFocus" },
+      { "key": "alt+1", "command": "clipboard.paste", "args": { "slot": 1 }, "when": "editorTextFocus" },
+      { "key": "alt+2", "command": "clipboard.paste", "args": { "slot": 2 }, "when": "editorTextFocus" },
+      { "key": "alt+3", "command": "clipboard.paste", "args": { "slot": 3 }, "when": "editorTextFocus" },
+      { "key": "alt+4", "command": "clipboard.paste", "args": { "slot": 4 }, "when": "editorTextFocus" },
+      { "key": "alt+5", "command": "clipboard.paste", "args": { "slot": 5 }, "when": "editorTextFocus" },
+      { "key": "alt+6", "command": "clipboard.paste", "args": { "slot": 6 }, "when": "editorTextFocus" },
+      { "key": "alt+7", "command": "clipboard.paste", "args": { "slot": 7 }, "when": "editorTextFocus" },
+      { "key": "alt+8", "command": "clipboard.paste", "args": { "slot": 8 }, "when": "editorTextFocus" },
+      { "key": "alt+9", "command": "clipboard.paste", "args": { "slot": 9 }, "when": "editorTextFocus" },
+      { "key": "ctrl+shift+c", "command": "clipboard.copyAndSave", "when": "editorTextFocus" }
     ],
-    "configuration": {
-      "type": "object",
-      "title": "Clipboard Manager Settings",
-      "properties": {
-        "clipboardManager.autoCapture": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically capture normal clipboard copies (Ctrl+C) into history."
+    "menus": {
+      "view/title": [
+        {
+          "command": "clipboard.refresh",
+          "when": "view == clipboardView",
+          "group": "navigation@1",
+          "icon": "$(refresh)"
+        },
+        {
+          "command": "clipboard.search",
+          "when": "view == clipboardView",
+          "group": "navigation@2",
+          "icon": "$(search)"
         }
-      }
+      ],
+      "view/item/context": [
+        {
+          "command": "clipboard.pin",
+          "when": "view == clipboardView && viewItem == historyItem",
+          "group": "inline@1",
+          "title": "📌 Pin Item"
+        },
+        {
+          "command": "clipboard.unpin",
+          "when": "view == clipboardView && viewItem == pinnedItem",
+          "group": "inline@2",
+          "title": "📍 Unpin Item"
+        },
+        {
+          "command": "clipboard.delete",
+          "when": "view == clipboardView && (viewItem == pinnedItem || viewItem == historyItem)",
+          "group": "inline@3",
+          "title": "🗑️ Delete Item"
+        },
+        {
+          "command": "clipboard.copyAndSave",
+          "when": "view == clipboardView && (viewItem == pinnedItem || viewItem == historyItem)",
+          "group": "inline@4",
+          "title": "📋 Copy Item"
+        }
+      ]
     }
   },
   "dependencies": {}

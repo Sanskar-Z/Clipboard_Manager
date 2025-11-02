@@ -1,165 +1,137 @@
+// 📋 Clipboard Manager for VS Code
+// --------------------------------
+// Main Extension Activation File
+
 const vscode = require('vscode');
-const path = require('path');
 const fs = require('fs');
-const ClipboardDataProvider = require('./clipboardDataProvider');
+const path = require('path');
 const historyBackend = require('./historyBackend');
+const ClipboardDataProvider = require('./clipboardDataProvider');
 
-let clipboardWatcher;
-let lastClipboardText = '';
+let dataProvider;
 
-/**
- * @param {vscode.ExtensionContext} context
- */
 function activate(context) {
-    // 🗂️ Store data in the project folder instead of global storage
-    const projectDataDir = path.join(__dirname, 'data');
-    const slotsDir = path.join(projectDataDir, 'slots');
-    const historyFile = path.join(projectDataDir, 'history.txt');
+  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || __dirname;
+  const historyFilePath = path.join(workspacePath, 'clipboard_history.json');
 
-    // Ensure local data folders exist
-    if (!fs.existsSync(projectDataDir)) fs.mkdirSync(projectDataDir, { recursive: true });
-    if (!fs.existsSync(slotsDir)) fs.mkdirSync(slotsDir, { recursive: true });
-    if (!fs.existsSync(historyFile)) fs.writeFileSync(historyFile, '', 'utf8');
+  // ✅ Ensure history file exists
+  if (!fs.existsSync(historyFilePath)) {
+    fs.writeFileSync(historyFilePath, JSON.stringify({ slots: {}, pinned: [], history: [] }, null, 2));
+  }
 
-    // Tree View Provider
-    const provider = new ClipboardDataProvider(historyFile, slotsDir);
-    vscode.window.registerTreeDataProvider('clipboardView', provider);
+  // ✅ Initialize backend
+  historyBackend.init(historyFilePath);
 
-    // 🔄 Refresh Command
-    context.subscriptions.push(
-        vscode.commands.registerCommand('clipboard.refresh', () => provider.refresh())
-    );
+  // ✅ Create and register TreeDataProvider
+  dataProvider = new ClipboardDataProvider(historyBackend);
+  vscode.window.registerTreeDataProvider('clipboardView', dataProvider);
 
-    // 📋 Open item (preview)
-    context.subscriptions.push(
-        vscode.commands.registerCommand('clipboard.openItem', async (meta) => {
-            if (!meta?.content) return;
-            const doc = await vscode.workspace.openTextDocument({
-                content: meta.content,
-                language: 'plaintext'
-            });
-            vscode.window.showTextDocument(doc, { preview: true });
-        })
-    );
+  // --------------------------------------------------------------------------
+  // 🧩 Commands
+  // --------------------------------------------------------------------------
 
-    // 📌 Pin / Unpin
-    context.subscriptions.push(
-        vscode.commands.registerCommand('clipboard.pin', (meta) => {
-            historyBackend.pinItem(historyFile, meta.index);
-            provider.refresh();
-        })
-    );
+  // 🔄 Refresh
+  register(context, 'clipboard.refresh', () => dataProvider.refresh());
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand('clipboard.unpin', (meta) => {
-            historyBackend.unpinItem(historyFile, meta.index);
-            provider.refresh();
-        })
-    );
+  // 📋 Copy to slot
+  register(context, 'clipboard.copy', async (args) => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return;
 
-    // 🗑️ Delete and Undo
-    context.subscriptions.push(
-        vscode.commands.registerCommand('clipboard.delete', (meta) => {
-            historyBackend.deleteItem(historyFile, meta.index);
-            provider.refresh();
-        })
-    );
+    const selectedText = editor.document.getText(editor.selection);
+    if (!selectedText.trim()) return vscode.window.showWarningMessage('⚠️ No text selected.');
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand('clipboard.undo', () => {
-            historyBackend.undoDelete(historyFile);
-            provider.refresh();
-        })
-    );
+    historyBackend.saveToSlot(args.slot, selectedText);
+    vscode.window.showInformationMessage(`✅ Copied to Slot ${args.slot}`);
+    dataProvider.refresh();
+  });
 
-    // 💾 Manual slot set
-    context.subscriptions.push(
-        vscode.commands.registerCommand('clipboard.setSlot', async () => {
-            const slotNum = await vscode.window.showInputBox({
-                prompt: 'Enter slot number (0-9):',
-                validateInput: (val) =>
-                    /^[0-9]$/.test(val) ? null : 'Enter a single digit between 0 and 9'
-            });
-            if (!slotNum) return;
-            const text = await vscode.window.showInputBox({ prompt: 'Enter text to store in slot' });
-            if (!text) return;
-            const filePath = path.join(slotsDir, `slot_${slotNum}.txt`);
-            fs.writeFileSync(filePath, text, 'utf8');
-            provider.refresh();
-        })
-    );
+  // 📥 Paste from slot
+  register(context, 'clipboard.paste', async (args) => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return;
 
-    // ⚡ Copy to Slot Command (Ctrl + 0–9)
-    context.subscriptions.push(
-        vscode.commands.registerCommand('clipboard.copy', async (args) => {
-            const slot = args?.slot ?? 0;
-            const editor = vscode.window.activeTextEditor;
-            if (!editor) return;
-            const selection = editor.document.getText(editor.selection);
-            if (!selection) return;
-            const filePath = path.join(slotsDir, `slot_${slot}.txt`);
-            fs.writeFileSync(filePath, selection, 'utf8');
-            vscode.window.showInformationMessage(`Copied to slot ${slot}`);
-            provider.refresh();
-        })
-    );
+    const text = historyBackend.getFromSlot(args.slot);
+    if (!text) return vscode.window.showWarningMessage(`⚠️ Slot ${args.slot} is empty.`);
 
-    // ⚡ Paste from Slot Command (Alt + 0–9)
-    context.subscriptions.push(
-        vscode.commands.registerCommand('clipboard.paste', async (args) => {
-            const slot = args?.slot ?? 0;
-            const filePath = path.join(slotsDir, `slot_${slot}.txt`);
-            if (!fs.existsSync(filePath)) {
-                vscode.window.showWarningMessage(`Slot ${slot} is empty`);
-                return;
-            }
-            const text = fs.readFileSync(filePath, 'utf8');
-            const editor = vscode.window.activeTextEditor;
-            if (editor) {
-                editor.edit(editBuilder => editBuilder.insert(editor.selection.active, text));
-                vscode.window.showInformationMessage(`Pasted from slot ${slot}`);
-            }
-        })
-    );
+    await editor.edit((builder) => builder.replace(editor.selection, text));
+    vscode.window.showInformationMessage(`📥 Pasted from Slot ${args.slot}`);
+  });
 
-    // 🧠 Background Clipboard Watcher — Auto add copied text to history
-    clipboardWatcher = setInterval(async () => {
-        try {
-            const currentText = await vscode.env.clipboard.readText();
-            if (currentText && currentText.trim() && currentText !== lastClipboardText) {
-                lastClipboardText = currentText;
-                historyBackend.addItem(historyFile, currentText);
-                provider.refresh();
-            }
-        } catch (err) {
-            console.error('Clipboard watcher error:', err);
-        }
-    }, 1000);
+  // 💾 Copy and Save
+  register(context, 'clipboard.copyAndSave', async (textArg) => {
+    let text = textArg;
+    if (!text) {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) return;
+      text = editor.document.getText(editor.selection);
+    }
 
-    // ⚡ Normal Copy (Ctrl + C) → Also Save to History
-    context.subscriptions.push(
-        vscode.commands.registerCommand('clipboard.copyAndSave', async () => {
-            const editor = vscode.window.activeTextEditor;
-            if (!editor) return;
+    if (!text || !text.trim()) return vscode.window.showWarningMessage('⚠️ Nothing to copy.');
 
-            // Perform normal copy
-            await vscode.commands.executeCommand('editor.action.clipboardCopyAction');
+    historyBackend.addToHistory(text);
+    vscode.window.showInformationMessage('💾 Saved to clipboard history.');
+    dataProvider.refresh();
+  });
 
-            // Add copied content to history
-            const copiedText = await vscode.env.clipboard.readText();
-            if (copiedText && copiedText.trim()) {
-                historyBackend.addItem(historyFile, copiedText);
-                vscode.window.setStatusBarMessage('✅ Copied & added to history', 2000);
-                provider.refresh();
-            }
-        })
-    );
+  // 📌 Pin item
+  register(context, 'clipboard.pin', (item) => {
+    const cleanText = getCleanLabel(item);
+    if (!cleanText) return;
 
-    vscode.window.showInformationMessage('📋 Clipboard Manager Activated');
+    historyBackend.pinItem(cleanText);
+    vscode.window.showInformationMessage(`📌 Pinned item: "${cleanText}"`);
+    dataProvider.refresh();
+  });
+
+  // 📤 Unpin item
+  register(context, 'clipboard.unpin', (item) => {
+    const cleanText = getCleanLabel(item);
+    if (!cleanText) return;
+
+    historyBackend.unpinItem(cleanText);
+    vscode.window.showInformationMessage(`📤 Unpinned item: "${cleanText}"`);
+    dataProvider.refresh();
+  });
+
+  // ❌ Delete item
+  register(context, 'clipboard.delete', async (item) => {
+    const cleanText = getCleanLabel(item);
+    if (!cleanText) return;
+
+    const confirm = await vscode.window.showQuickPick(['Yes', 'No'], {
+      placeHolder: `🗑️ Delete "${cleanText}" from clipboard history?`,
+    });
+
+    if (confirm === 'Yes') {
+      historyBackend.deleteItem(cleanText);
+      vscode.window.showInformationMessage(`🗑️ Deleted: "${cleanText}"`);
+      dataProvider.refresh();
+    }
+  });
+
+  // 🔍 Search
+  register(context, 'clipboard.search', async () => {
+    const query = await vscode.window.showInputBox({ prompt: '🔍 Search clipboard history...' });
+    if (query !== undefined) dataProvider.search(query);
+  });
+
+  console.log('✅ Clipboard Manager activated successfully.');
 }
 
-function deactivate() {
-    if (clipboardWatcher) clearInterval(clipboardWatcher);
+// --------------------------------------------------------------------------
+// 🧠 Utility Functions
+// --------------------------------------------------------------------------
+
+function getCleanLabel(item) {
+  if (!item?.label) return '';
+  return item.label.replace(/^\d+\.\s*/, ''); // remove index prefix like "1. text"
 }
+
+function register(context, command, callback) {
+  context.subscriptions.push(vscode.commands.registerCommand(command, callback));
+}
+
+function deactivate() {}
 
 module.exports = { activate, deactivate };

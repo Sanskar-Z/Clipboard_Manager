@@ -1,79 +1,130 @@
 const vscode = require('vscode');
-const path = require('path');
-const fs = require('fs');
-const historyBackend = require('./historyBackend');
-
-class ClipboardItem extends vscode.TreeItem {
-    constructor(label, collapsibleState, meta) {
-        super(label, collapsibleState);
-        this.meta = meta;
-        this.command = {
-            title: 'Open item',
-            command: 'clipboard.openItem',
-            arguments: [this.meta]
-        };
-        this.contextValue = 'clipboardItem';
-    }
-}
 
 class ClipboardDataProvider {
-    constructor(historyPath, slotsDir) {
-        this.historyPath = historyPath;
-        this.slotsDir = slotsDir;
-        this._onDidChangeTreeData = new vscode.EventEmitter();
-        this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+  constructor(backend) {
+    this.backend = backend;
+    this._onDidChangeTreeData = new vscode.EventEmitter();
+    this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+    this.allItems = backend.getAll();
+  }
+
+  refresh() {
+    this.allItems = this.backend.getAll();
+    this._onDidChangeTreeData.fire();
+  }
+
+  search(query) {
+    try {
+      const results = this.backend.search(query);
+      this.allItems.history = Array.isArray(results) ? results : [];
+      this._onDidChangeTreeData.fire();
+    } catch (err) {
+      vscode.window.showErrorMessage(`❌ Search failed: ${err.message}`);
+    }
+  }
+
+  getTreeItem(element) {
+    return element;
+  }
+
+  getChildren() {
+    const { slots = {}, pinned = [], history = [] } = this.allItems || {};
+    const items = [];
+
+    // --- 🧩 SLOTS ---
+    items.push(this._createSectionHeader('📜  Slots'));
+    const slotEntries = Object.entries(slots);
+    if (slotEntries.length) {
+      for (const [slot, text] of slotEntries) {
+        const safeText = this._sanitize(text);
+        const item = new vscode.TreeItem(`🔹 Slot ${slot}: ${safeText}`, vscode.TreeItemCollapsibleState.None);
+        item.iconPath = new vscode.ThemeIcon('database');
+        item.contextValue = 'slot';
+        item.tooltip = `📋 Slot ${slot}\n\n${safeText}`;
+        item.command = {
+          command: 'clipboard.paste',
+          title: 'Paste from Slot',
+          arguments: [{ slot }],
+        };
+        items.push(item);
+      }
+    } else {
+      items.push(this._createEmptyMessage('No saved slots'));
     }
 
-    refresh() {
-        this._onDidChangeTreeData.fire();
+    // --- 📌 PINNED ITEMS ---
+    items.push(this._createSectionHeader('📌  Pinned'));
+    if (pinned.length) {
+      pinned.forEach((text, index) => {
+        const safeText = this._sanitize(text);
+        const item = new vscode.TreeItem(`${index + 1}. ${safeText}`, vscode.TreeItemCollapsibleState.None);
+        item.iconPath = new vscode.ThemeIcon('pin');
+        item.tooltip = `📍 Pinned item\n\n${safeText}`;
+        item.contextValue = 'pinnedItem';
+        item.description = safeText; // ✅ replaces textValue
+        item.command = {
+          command: 'clipboard.copyAndSave',
+          title: 'Copy Pinned Item',
+          arguments: [text],
+        };
+        items.push(item);
+      });
+    } else {
+      items.push(this._createEmptyMessage('No pinned items'));
     }
 
-    getTreeItem(element) {
-        return element;
+    // --- 🕘 HISTORY ITEMS ---
+    items.push(this._createSectionHeader('⌛  History'));
+    const filteredHistory = history.filter((text) => !pinned.includes(text));
+    if (filteredHistory.length) {
+      filteredHistory.forEach((text, index) => {
+        const safeText = this._sanitize(text);
+        const item = new vscode.TreeItem(`${index + 1}. ${safeText}`, vscode.TreeItemCollapsibleState.None);
+        item.iconPath = new vscode.ThemeIcon('clock');
+        item.tooltip = `📄 Clipboard item\n\n${safeText}`;
+        item.contextValue = 'historyItem';
+        item.description = safeText; // ✅ replaces textValue
+        item.command = {
+          command: 'clipboard.copyAndSave',
+          title: 'Copy History Item',
+          arguments: [text],
+        };
+        items.push(item);
+      });
+    } else {
+      items.push(this._createEmptyMessage('No history items'));
     }
 
-    getChildren(element) {
-        if (!element) {
-            // root: two groups: Slots and History
-            const children = [];
-            // slots as top-level collapsible
-            const slotsNode = new ClipboardItem('Slots', vscode.TreeItemCollapsibleState.Collapsed, { type: 'slots' });
-            const historyNode = new ClipboardItem('History', vscode.TreeItemCollapsibleState.Collapsed, { type: 'history' });
-            return Promise.resolve([slotsNode, historyNode]);
-        } else {
-            if (element.meta && element.meta.type === 'slots') {
-                // return slot items
-                const arr = [];
-                for (let i = 0; i <= 9; ++i) {
-                    const p = path.join(this.slotsDir, `slot_${i}.txt`);
-                    let label = `Slot ${i} (empty)`;
-                    let content = '';
-                    if (fs.existsSync(p)) {
-                        try { content = fs.readFileSync(p, 'utf8'); } catch (e) { content = ''; }
-                        const preview = content.length > 60 ? content.slice(0, 57) + '...' : content;
-                        label = `Slot ${i}: ${preview}`;
-                    }
-                    const meta = { type: 'slot', index: i, content };
-                    const it = new ClipboardItem(label, vscode.TreeItemCollapsibleState.None, meta);
-                    it.tooltip = content;
-                    arr.push(it);
-                }
-                return Promise.resolve(arr);
-            } else if (element.meta && element.meta.type === 'history') {
-                const items = historyBackend.readHistory(this.historyPath);
-                const arr = items.map(it => {
-                    const preview = it.content.length > 80 ? it.content.slice(0, 77) + '...' : it.content;
-                    const label = `${it.pinned ? '📌 ' : ''}${preview}`;
-                    const meta = { type: 'historyItem', index: it.index, content: it.content, timestamp: it.timestamp, pinned: it.pinned };
-                    const ti = new ClipboardItem(label, vscode.TreeItemCollapsibleState.None, meta);
-                    ti.tooltip = `${it.timestamp}\n${it.content}`;
-                    return ti;
-                });
-                return Promise.resolve(arr);
-            }
-        }
-        return Promise.resolve([]);
+    // --- 🧼 FALLBACK ---
+    if (!slotEntries.length && !pinned.length && !history.length) {
+      const empty = new vscode.TreeItem('✨ Clipboard is empty — copy something to begin!');
+      empty.iconPath = new vscode.ThemeIcon('info');
+      empty.contextValue = 'empty';
+      items.push(empty);
     }
+
+    return items;
+  }
+
+  // --- 🧠 Helpers ---
+  _sanitize(text) {
+    return (text || '').replace(/\r?\n/g, ' ').trim() || '[Empty]';
+  }
+
+  _createSectionHeader(label) {
+    const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
+    item.iconPath = new vscode.ThemeIcon('symbol-namespace');
+    item.contextValue = 'section';
+    item.tooltip = label.replace(/📜|📌|⌛/g, '').trim();
+    return item;
+  }
+
+  _createEmptyMessage(label) {
+    const item = new vscode.TreeItem(`🕳️ ${label}`, vscode.TreeItemCollapsibleState.None);
+    item.iconPath = new vscode.ThemeIcon('circle-slash');
+    item.contextValue = 'empty';
+    return item;
+  }
 }
 
 module.exports = ClipboardDataProvider;
