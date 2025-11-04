@@ -37,11 +37,14 @@ std::vector<HistoryItem> HistoryManager::readHistory() {
     std::string entry;
     std::string line;
     bool isReading = false;
+    bool isReadingContent = false;
     HistoryItem currentItem;
+    size_t contentLength = 0;
     
     while (std::getline(in, line)) {
         if (line.find("=== ENTRY START ===") != std::string::npos) {
             isReading = true;
+            isReadingContent = false;
             currentItem = HistoryItem();
             continue;
         }
@@ -51,6 +54,7 @@ std::vector<HistoryItem> HistoryManager::readHistory() {
                 out.push_back(currentItem);
             }
             isReading = false;
+            isReadingContent = false;
             continue;
         }
         
@@ -59,11 +63,18 @@ std::vector<HistoryItem> HistoryManager::readHistory() {
                 currentItem.timestamp = line.substr(11);
             } else if (line.find("PINNED: ") == 0) {
                 currentItem.pinned = (line.substr(8) == "1");
-            } else if (line.find("CONTENT: ") == 0) {
-                currentItem.content = line.substr(9);
-            } else if (!line.empty() && !currentItem.content.empty()) {
-                // Append additional content lines
-                currentItem.content += "\n" + line;
+            } else if (line.find("CONTENT_LENGTH: ") == 0) {
+                contentLength = std::stoul(line.substr(15));
+            } else if (line == "CONTENT:") {
+                isReadingContent = true;
+                continue;
+            } else if (line == "END_CONTENT") {
+                isReadingContent = false;
+            } else if (isReadingContent) {
+                if (!currentItem.content.empty()) {
+                    currentItem.content += "\n";
+                }
+                currentItem.content += line;
             }
         }
     }
@@ -77,7 +88,8 @@ bool HistoryManager::writeHistory(const std::vector<HistoryItem>& items) {
         out << "=== ENTRY START ===" << "\n";
         out << "TIMESTAMP: " << it.timestamp << "\n";
         out << "PINNED: " << (it.pinned ? "1" : "0") << "\n";
-        out << "CONTENT: " << it.content << "\n";
+        out << "CONTENT_LENGTH: " << it.content.length() << "\n";
+        out << "CONTENT:\n" << it.content << "\nEND_CONTENT\n";
         out << "=== ENTRY END ===" << "\n\n";
     }
     return true;
@@ -196,10 +208,11 @@ bool HistoryManager::setSlot(int slot, const std::string &text) {
     std::ofstream out(path, std::ios::trunc | std::ios::binary);
     if (!out.is_open()) return false;
     
-    // Store with entry markers to maintain consistency
+    // Store with entry markers and length to maintain consistency
     out << "=== SLOT START ===" << "\n";
-    out << text;
-    out << "\n=== SLOT END ===";
+    out << "CONTENT_LENGTH: " << text.length() << "\n";
+    out << "CONTENT:\n" << text << "\nEND_CONTENT\n";
+    out << "=== SLOT END ===";
     return true;
 }
 
@@ -212,6 +225,8 @@ std::optional<std::string> HistoryManager::getSlot(int slot) {
     std::string content;
     std::string line;
     bool isReading = false;
+    bool isReadingContent = false;
+    size_t contentLength = 0;
     
     while (std::getline(in, line)) {
         if (line == "=== SLOT START ===") {
@@ -222,10 +237,19 @@ std::optional<std::string> HistoryManager::getSlot(int slot) {
             break;
         }
         if (isReading) {
-            if (!content.empty()) {
-                content += "\n";
+            if (line.find("CONTENT_LENGTH: ") == 0) {
+                contentLength = std::stoul(line.substr(15));
+            } else if (line == "CONTENT:") {
+                isReadingContent = true;
+                continue;
+            } else if (line == "END_CONTENT") {
+                isReadingContent = false;
+            } else if (isReadingContent) {
+                if (!content.empty()) {
+                    content += "\n";
+                }
+                content += line;
             }
-            content += line;
         }
     }
     
