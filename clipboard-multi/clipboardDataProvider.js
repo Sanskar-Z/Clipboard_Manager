@@ -56,16 +56,17 @@ class ClipboardDataProvider {
     items.push(this._createSectionHeader('📌  Pinned'));
     if (pinned.length) {
       pinned.forEach((text, index) => {
-        const safeText = this._sanitize(text);
+        const fullText = this._getFullText(text);
+        const safeText = this._sanitize(fullText);
         const item = new vscode.TreeItem(`${index + 1}. ${safeText}`, vscode.TreeItemCollapsibleState.None);
         item.iconPath = new vscode.ThemeIcon('pin');
-        item.tooltip = `📍 Pinned item\n\n${safeText}`;
+        item.tooltip = `📍 Pinned item\n\n${fullText}`;
         item.contextValue = 'pinnedItem';
-        item.description = safeText; // ✅ replaces textValue
+        item.label = `${index + 1}. ${safeText}`;
         item.command = {
           command: 'clipboard.copyAndSave',
           title: 'Copy Pinned Item',
-          arguments: [text],
+          arguments: [fullText],
         };
         items.push(item);
       });
@@ -78,16 +79,17 @@ class ClipboardDataProvider {
     const filteredHistory = history.filter((text) => !pinned.includes(text));
     if (filteredHistory.length) {
       filteredHistory.forEach((text, index) => {
-        const safeText = this._sanitize(text);
+        const fullText = this._getFullText(text);
+        const safeText = this._sanitize(fullText);
         const item = new vscode.TreeItem(`${index + 1}. ${safeText}`, vscode.TreeItemCollapsibleState.None);
         item.iconPath = new vscode.ThemeIcon('clock');
-        item.tooltip = `📄 Clipboard item\n\n${safeText}`;
+        item.tooltip = `📄 Clipboard item\n\n${fullText}`;
         item.contextValue = 'historyItem';
-        item.description = safeText; // ✅ replaces textValue
+        item.label = `${index + 1}. ${safeText}`;
         item.command = {
           command: 'clipboard.copyAndSave',
           title: 'Copy History Item',
-          arguments: [text],
+          arguments: [fullText],
         };
         items.push(item);
       });
@@ -108,7 +110,17 @@ class ClipboardDataProvider {
 
   // --- 🧠 Helpers ---
   _sanitize(text) {
-    return (text || '').replace(/\r?\n/g, ' ').trim() || '[Empty]';
+    // Preserve first line for display, indicate if there are more lines
+    const lines = (text || '').split(/\r?\n/);
+    if (lines.length > 1) {
+      return `${lines[0].trim()}... (+${lines.length - 1} more lines)`;
+    }
+    return (text || '').trim() || '[Empty]';
+  }
+
+  _getFullText(text) {
+    // Remove any index prefix if present (e.g., "1. text")
+    return text.replace(/^\d+\.\s*/, '');
   }
 
   _createSectionHeader(label) {

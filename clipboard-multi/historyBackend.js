@@ -48,7 +48,9 @@ function addToHistory(text) {
 function pinItem(text) {
   try {
     const history = clipboardAddon.getHistory();
-    const index = history.findIndex(item => item.content === text);
+    // Remove any index prefix before comparing (e.g., "1. text" -> "text")
+    const cleanText = text.replace(/^\d+\.\s*/, '');
+    const index = history.findIndex(item => item.content.trim() === cleanText.trim());
     if (index !== -1) {
       clipboardAddon.pinItem(index);
       return true;
@@ -63,7 +65,9 @@ function pinItem(text) {
 function unpinItem(text) {
   try {
     const history = clipboardAddon.getHistory();
-    const index = history.findIndex(item => item.content === text);
+    // Remove any index prefix before comparing
+    const cleanText = text.replace(/^\d+\.\s*/, '');
+    const index = history.findIndex(item => item.content.trim() === cleanText.trim());
     if (index !== -1) {
       clipboardAddon.unpinItem(index);
       return true;
@@ -78,10 +82,12 @@ function unpinItem(text) {
 function deleteItem(text) {
   try {
     const history = clipboardAddon.getHistory();
-    const index = history.findIndex(item => item.content === text);
+    // Remove any index prefix before comparing
+    const cleanText = text.replace(/^\d+\.\s*/, '');
+    const index = history.findIndex(item => item.content.trim() === cleanText.trim());
     if (index !== -1) {
       clipboardAddon.deleteItem(index);
-      console.log(`[Clipboard Manager] Deleted "${text}"`);
+      console.log(`[Clipboard Manager] Deleted item at index ${index}`);
       return true;
     }
     return false;
