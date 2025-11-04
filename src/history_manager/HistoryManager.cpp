@@ -5,7 +5,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
-#include <nlohmann/json.hpp> // optional: if you want JSON; else simple custom format
+#include <algorithm>
 
 namespace fs = std::filesystem;
 
@@ -23,10 +23,9 @@ HistoryManager::HistoryManager(const std::string &data_dir)
 static std::string now_iso8601() {
     auto t = std::chrono::system_clock::now();
     auto tt = std::chrono::system_clock::to_time_t(t);
-    std::tm tm;
-    localtime_s(&tm, &tt);
+    std::tm* tm = std::localtime(&tt);
     std::ostringstream ss;
-    ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+    ss << std::put_time(tm, "%Y-%m-%d %H:%M:%S");
     return ss.str();
 }
 
@@ -34,26 +33,38 @@ std::vector<HistoryItem> HistoryManager::readHistory() {
     std::vector<HistoryItem> out;
     std::ifstream in(m_historyPath);
     if (!in.is_open()) return out;
+    
+    std::string entry;
     std::string line;
+    bool isReading = false;
+    HistoryItem currentItem;
+    
     while (std::getline(in, line)) {
-        // Format: TIMESTAMP ||| CONTENT (safe split)
-        auto sep = line.find(" ||| ");
-        if (sep != std::string::npos) {
-            HistoryItem it;
-            it.timestamp = line.substr(0, sep);
-            it.content = line.substr(sep + 5);
-            // pinned marker: if content begins with [PINNED]
-            if (it.content.rfind("[PINNED]", 0) == 0) {
-                it.pinned = true;
-                it.content = it.content.substr(8);
+        if (line.find("=== ENTRY START ===") != std::string::npos) {
+            isReading = true;
+            currentItem = HistoryItem();
+            continue;
+        }
+        
+        if (line.find("=== ENTRY END ===") != std::string::npos) {
+            if (isReading && !currentItem.content.empty()) {
+                out.push_back(currentItem);
             }
-            out.push_back(it);
-        } else {
-            // Fallback: treat full line as content
-            HistoryItem it;
-            it.timestamp = "";
-            it.content = line;
-            out.push_back(it);
+            isReading = false;
+            continue;
+        }
+        
+        if (isReading) {
+            if (line.find("TIMESTAMP: ") == 0) {
+                currentItem.timestamp = line.substr(11);
+            } else if (line.find("PINNED: ") == 0) {
+                currentItem.pinned = (line.substr(8) == "1");
+            } else if (line.find("CONTENT: ") == 0) {
+                currentItem.content = line.substr(9);
+            } else if (!line.empty() && !currentItem.content.empty()) {
+                // Append additional content lines
+                currentItem.content += "\n" + line;
+            }
         }
     }
     return out;
@@ -63,9 +74,11 @@ bool HistoryManager::writeHistory(const std::vector<HistoryItem>& items) {
     std::ofstream out(m_historyPath, std::ios::trunc);
     if (!out.is_open()) return false;
     for (const auto &it : items) {
-        std::string content = it.content;
-        if (it.pinned) content = std::string("[PINNED]") + content;
-        out << it.timestamp << " ||| " << content << "\n";
+        out << "=== ENTRY START ===" << "\n";
+        out << "TIMESTAMP: " << it.timestamp << "\n";
+        out << "PINNED: " << (it.pinned ? "1" : "0") << "\n";
+        out << "CONTENT: " << it.content << "\n";
+        out << "=== ENTRY END ===" << "\n\n";
     }
     return true;
 }
@@ -108,21 +121,47 @@ bool HistoryManager::unpinItem(size_t index) {
 bool HistoryManager::saveLastDeleted(const HistoryItem &it) {
     std::ofstream out(m_lastDeletedPath, std::ios::trunc);
     if (!out.is_open()) return false;
-    out << it.timestamp << "\n";
-    out << it.content << "\n";
-    out << (it.pinned ? "1" : "0") << "\n";
+    out << "=== ENTRY START ===" << "\n";
+    out << "TIMESTAMP: " << it.timestamp << "\n";
+    out << "PINNED: " << (it.pinned ? "1" : "0") << "\n";
+    out << "CONTENT: " << it.content << "\n";
+    out << "=== ENTRY END ===" << "\n";
     return true;
 }
 
 std::optional<HistoryItem> HistoryManager::loadLastDeleted() {
     std::ifstream in(m_lastDeletedPath);
     if (!in.is_open()) return std::nullopt;
+    
     HistoryItem it;
-    if (!std::getline(in, it.timestamp)) return std::nullopt;
-    if (!std::getline(in, it.content)) return std::nullopt;
-    std::string pin;
-    if (!std::getline(in, pin)) return std::nullopt;
-    it.pinned = (pin == "1");
+    std::string line;
+    bool isReading = false;
+    
+    while (std::getline(in, line)) {
+        if (line.find("=== ENTRY START ===") != std::string::npos) {
+            isReading = true;
+            continue;
+        }
+        
+        if (line.find("=== ENTRY END ===") != std::string::npos) {
+            break;
+        }
+        
+        if (isReading) {
+            if (line.find("TIMESTAMP: ") == 0) {
+                it.timestamp = line.substr(11);
+            } else if (line.find("PINNED: ") == 0) {
+                it.pinned = (line.substr(8) == "1");
+            } else if (line.find("CONTENT: ") == 0) {
+                it.content = line.substr(9);
+            } else if (!line.empty()) {
+                // Append additional content lines
+                it.content += "\n" + line;
+            }
+        }
+    }
+    
+    if (it.content.empty()) return std::nullopt;
     return it;
 }
 
@@ -156,7 +195,11 @@ bool HistoryManager::setSlot(int slot, const std::string &text) {
     auto path = slotFilePath(slot);
     std::ofstream out(path, std::ios::trunc | std::ios::binary);
     if (!out.is_open()) return false;
+    
+    // Store with entry markers to maintain consistency
+    out << "=== SLOT START ===" << "\n";
     out << text;
+    out << "\n=== SLOT END ===";
     return true;
 }
 
@@ -165,17 +208,44 @@ std::optional<std::string> HistoryManager::getSlot(int slot) {
     auto path = slotFilePath(slot);
     std::ifstream in(path, std::ios::binary);
     if (!in.is_open()) return std::nullopt;
-    std::ostringstream ss;
-    ss << in.rdbuf();
-    return ss.str();
+    
+    std::string content;
+    std::string line;
+    bool isReading = false;
+    
+    while (std::getline(in, line)) {
+        if (line == "=== SLOT START ===") {
+            isReading = true;
+            continue;
+        }
+        if (line == "=== SLOT END ===") {
+            break;
+        }
+        if (isReading) {
+            if (!content.empty()) {
+                content += "\n";
+            }
+            content += line;
+        }
+    }
+    
+    return content;
 }
 
 std::vector<HistoryItem> HistoryManager::search(const std::string &keyword) {
+    if (keyword.empty()) return readHistory();
+    
     auto items = readHistory();
     std::vector<HistoryItem> results;
+    std::string lowerKeyword = keyword;
+    std::transform(lowerKeyword.begin(), lowerKeyword.end(), lowerKeyword.begin(), ::tolower);
+    
     for (auto &it : items) {
-        if (it.content.find(keyword) != std::string::npos)
+        std::string lowerContent = it.content;
+        std::transform(lowerContent.begin(), lowerContent.end(), lowerContent.begin(), ::tolower);
+        if (lowerContent.find(lowerKeyword) != std::string::npos) {
             results.push_back(it);
+        }
     }
     return results;
 }
