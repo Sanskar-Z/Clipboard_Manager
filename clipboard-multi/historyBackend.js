@@ -37,20 +37,51 @@ function getFromSlot(slot) {
 function addToHistory(text) {
   if (!text || text.trim() === '') return;
   try {
-    clipboardAddon.addToHistory(text);
-    return true;
+    // Clean any existing number prefixes or display artifacts
+    const cleanText = cleanDisplayText(text);
+    
+    // Check if this content already exists by first line
+    const history = clipboardAddon.getHistory();
+    const firstLineNew = getFirstLine(cleanText);
+    const exists = history.some(item => getFirstLine(item.content) === firstLineNew);
+    
+    if (!exists) {
+      clipboardAddon.addToHistory(cleanText);
+      return true;
+    }
+    return false;
   } catch (err) {
     console.error('[Clipboard Manager] Failed to add to history:', err);
     return false;
   }
 }
 
+function cleanDisplayText(text) {
+  // Clean the display format text to get original content
+  return text
+    .replace(/^\d+\.\s*/, '') // Remove index prefix
+    .replace(/\.\.\. \(\+\d+ more lines\)$/, '') // Remove "more lines" suffix
+    .trim();
+}
+
+function getFirstLine(text) {
+  return text.split(/\r?\n/)[0].trim();
+}
+
+function findItemIndex(history, text) {
+  const cleanText = cleanDisplayText(text);
+  const firstLineToFind = getFirstLine(cleanText);
+
+  return history.findIndex(item => {
+    const itemFirstLine = getFirstLine(item.content);
+    return itemFirstLine === firstLineToFind;
+  });
+}
+
 function pinItem(text) {
   try {
     const history = clipboardAddon.getHistory();
-    // Remove any index prefix before comparing (e.g., "1. text" -> "text")
-    const cleanText = text.replace(/^\d+\.\s*/, '');
-    const index = history.findIndex(item => item.content.trim() === cleanText.trim());
+    const index = findItemIndex(history, text);
     if (index !== -1) {
       clipboardAddon.pinItem(index);
       return true;
@@ -65,9 +96,7 @@ function pinItem(text) {
 function unpinItem(text) {
   try {
     const history = clipboardAddon.getHistory();
-    // Remove any index prefix before comparing
-    const cleanText = text.replace(/^\d+\.\s*/, '');
-    const index = history.findIndex(item => item.content.trim() === cleanText.trim());
+    const index = findItemIndex(history, text);
     if (index !== -1) {
       clipboardAddon.unpinItem(index);
       return true;
@@ -82,9 +111,7 @@ function unpinItem(text) {
 function deleteItem(text) {
   try {
     const history = clipboardAddon.getHistory();
-    // Remove any index prefix before comparing
-    const cleanText = text.replace(/^\d+\.\s*/, '');
-    const index = history.findIndex(item => item.content.trim() === cleanText.trim());
+    const index = findItemIndex(history, text);
     if (index !== -1) {
       clipboardAddon.deleteItem(index);
       console.log(`[Clipboard Manager] Deleted item at index ${index}`);

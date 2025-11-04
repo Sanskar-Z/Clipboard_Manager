@@ -63,10 +63,11 @@ class ClipboardDataProvider {
           ? `${firstLine}... (+${lines.length - 1} more lines)`
           : firstLine;
 
-        const item = new vscode.TreeItem(`${index + 1}. ${displayText}`, vscode.TreeItemCollapsibleState.None);
+        const item = new vscode.TreeItem(displayText, vscode.TreeItemCollapsibleState.None);
         item.iconPath = new vscode.ThemeIcon('pin');
         item.tooltip = `📍 Pinned item\n\n${cleanText}`;
         item.contextValue = 'pinnedItem';
+        item.description = `#${index + 1}`;  // Show index as description
         item.command = {
           command: 'clipboard.copyAndSave',
           title: 'Copy Pinned Item',
@@ -80,7 +81,15 @@ class ClipboardDataProvider {
 
     // --- 🕘 HISTORY ITEMS ---
     items.push(this._createSectionHeader('⌛  History'));
-    const filteredHistory = history.filter((text) => !pinned.includes(text));
+    // Filter out pinned items and any duplicate first lines
+    const seen = new Set(pinned.map(text => text.split(/\r?\n/)[0].trim()));
+    const filteredHistory = history.filter(text => {
+      const firstLine = text.split(/\r?\n/)[0].trim();
+      if (seen.has(firstLine)) return false;
+      seen.add(firstLine);
+      return true;
+    });
+
     if (filteredHistory.length) {
       filteredHistory.forEach((text, index) => {
         const cleanText = text.replace(/^\d+\.\s*/, '').trim();
@@ -90,10 +99,11 @@ class ClipboardDataProvider {
           ? `${firstLine}... (+${lines.length - 1} more lines)`
           : firstLine;
 
-        const item = new vscode.TreeItem(`${index + 1}. ${displayText}`, vscode.TreeItemCollapsibleState.None);
+        const item = new vscode.TreeItem(displayText, vscode.TreeItemCollapsibleState.None);
         item.iconPath = new vscode.ThemeIcon('clock');
         item.tooltip = `📄 Clipboard item\n\n${cleanText}`;
         item.contextValue = 'historyItem';
+        item.description = `#${index + 1}`;  // Show index as description
         item.command = {
           command: 'clipboard.copyAndSave',
           title: 'Copy History Item',
