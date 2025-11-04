@@ -69,12 +69,13 @@ function getFirstLine(text) {
 }
 
 function findItemIndex(history, text) {
+  // Clean the target text of any display artifacts and normalize
   const cleanText = cleanDisplayText(text);
-  const firstLineToFind = getFirstLine(cleanText);
-
+  
+  // Find exact match of full content, not just first line
   return history.findIndex(item => {
-    const itemFirstLine = getFirstLine(item.content);
-    return itemFirstLine === firstLineToFind;
+    const itemContent = cleanDisplayText(item.content);
+    return itemContent === cleanText;
   });
 }
 

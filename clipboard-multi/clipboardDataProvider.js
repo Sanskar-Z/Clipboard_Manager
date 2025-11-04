@@ -81,12 +81,12 @@ class ClipboardDataProvider {
 
     // --- 🕘 HISTORY ITEMS ---
     items.push(this._createSectionHeader('⌛  History'));
-    // Filter out pinned items and any duplicate first lines
-    const seen = new Set(pinned.map(text => text.split(/\r?\n/)[0].trim()));
+    // Filter out pinned items and handle multiline text
+    const seen = new Set();
     const filteredHistory = history.filter(text => {
-      const firstLine = text.split(/\r?\n/)[0].trim();
-      if (seen.has(firstLine)) return false;
-      seen.add(firstLine);
+      const cleanText = text.replace(/^\d+\.\s*/, '').trim();
+      if (seen.has(cleanText)) return false;
+      seen.add(cleanText);
       return true;
     });
 
