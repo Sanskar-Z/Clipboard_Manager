@@ -56,17 +56,21 @@ class ClipboardDataProvider {
     items.push(this._createSectionHeader('📌  Pinned'));
     if (pinned.length) {
       pinned.forEach((text, index) => {
-        const fullText = this._getFullText(text);
-        const safeText = this._sanitize(fullText);
-        const item = new vscode.TreeItem(`${index + 1}. ${safeText}`, vscode.TreeItemCollapsibleState.None);
+        const cleanText = text.replace(/^\d+\.\s*/, '').trim();
+        const lines = cleanText.split(/\r?\n/);
+        const firstLine = lines[0].trim();
+        const displayText = lines.length > 1 
+          ? `${firstLine}... (+${lines.length - 1} more lines)`
+          : firstLine;
+
+        const item = new vscode.TreeItem(`${index + 1}. ${displayText}`, vscode.TreeItemCollapsibleState.None);
         item.iconPath = new vscode.ThemeIcon('pin');
-        item.tooltip = `📍 Pinned item\n\n${fullText}`;
+        item.tooltip = `📍 Pinned item\n\n${cleanText}`;
         item.contextValue = 'pinnedItem';
-        item.label = `${index + 1}. ${safeText}`;
         item.command = {
           command: 'clipboard.copyAndSave',
           title: 'Copy Pinned Item',
-          arguments: [fullText],
+          arguments: [cleanText],
         };
         items.push(item);
       });
@@ -79,17 +83,21 @@ class ClipboardDataProvider {
     const filteredHistory = history.filter((text) => !pinned.includes(text));
     if (filteredHistory.length) {
       filteredHistory.forEach((text, index) => {
-        const fullText = this._getFullText(text);
-        const safeText = this._sanitize(fullText);
-        const item = new vscode.TreeItem(`${index + 1}. ${safeText}`, vscode.TreeItemCollapsibleState.None);
+        const cleanText = text.replace(/^\d+\.\s*/, '').trim();
+        const lines = cleanText.split(/\r?\n/);
+        const firstLine = lines[0].trim();
+        const displayText = lines.length > 1 
+          ? `${firstLine}... (+${lines.length - 1} more lines)`
+          : firstLine;
+
+        const item = new vscode.TreeItem(`${index + 1}. ${displayText}`, vscode.TreeItemCollapsibleState.None);
         item.iconPath = new vscode.ThemeIcon('clock');
-        item.tooltip = `📄 Clipboard item\n\n${fullText}`;
+        item.tooltip = `📄 Clipboard item\n\n${cleanText}`;
         item.contextValue = 'historyItem';
-        item.label = `${index + 1}. ${safeText}`;
         item.command = {
           command: 'clipboard.copyAndSave',
           title: 'Copy History Item',
-          arguments: [fullText],
+          arguments: [cleanText],
         };
         items.push(item);
       });
@@ -110,17 +118,18 @@ class ClipboardDataProvider {
 
   // --- 🧠 Helpers ---
   _sanitize(text) {
-    // Preserve first line for display, indicate if there are more lines
-    const lines = (text || '').split(/\r?\n/);
+    const cleanText = text.replace(/^\d+\.\s*/, '').trim();
+    const lines = cleanText.split(/\r?\n/);
     if (lines.length > 1) {
-      return `${lines[0].trim()}... (+${lines.length - 1} more lines)`;
+      const firstLine = lines[0].trim();
+      const remainingLines = lines.length - 1;
+      return `${firstLine}... (+${remainingLines} more lines)`;
     }
-    return (text || '').trim() || '[Empty]';
+    return cleanText || '[Empty]';
   }
 
   _getFullText(text) {
-    // Remove any index prefix if present (e.g., "1. text")
-    return text.replace(/^\d+\.\s*/, '');
+    return text.replace(/^\d+\.\s*/, '').trim();
   }
 
   _createSectionHeader(label) {
