@@ -4,7 +4,7 @@
 
 static std::unique_ptr<HistoryManager> historyManager;
 
-Napi::Value Init(const Napi::CallbackInfo& info) {
+Napi::Value InitManager(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
     if (info.Length() < 1) {
         Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
@@ -129,15 +129,24 @@ Napi::Value SearchHistory(const Napi::CallbackInfo& info) {
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-    exports.Set("init", Napi::Function::New(env, Init));
-    exports.Set("addToHistory", Napi::Function::New(env, AddToHistory));
-    exports.Set("getHistory", Napi::Function::New(env, GetHistory));
-    exports.Set("saveToSlot", Napi::Function::New(env, SaveToSlot));
-    exports.Set("getFromSlot", Napi::Function::New(env, GetFromSlot));
-    exports.Set("pinItem", Napi::Function::New(env, PinItem));
-    exports.Set("unpinItem", Napi::Function::New(env, UnpinItem));
-    exports.Set("deleteItem", Napi::Function::New(env, DeleteItem));
-    exports.Set("searchHistory", Napi::Function::New(env, SearchHistory));
+    exports.Set(Napi::String::New(env, "init"), 
+                Napi::Function::New(env, InitManager, "init"));
+    exports.Set(Napi::String::New(env, "addToHistory"), 
+                Napi::Function::New(env, AddToHistory, "addToHistory"));
+    exports.Set(Napi::String::New(env, "getHistory"), 
+                Napi::Function::New(env, GetHistory, "getHistory"));
+    exports.Set(Napi::String::New(env, "saveToSlot"), 
+                Napi::Function::New(env, SaveToSlot, "saveToSlot"));
+    exports.Set(Napi::String::New(env, "getFromSlot"), 
+                Napi::Function::New(env, GetFromSlot, "getFromSlot"));
+    exports.Set(Napi::String::New(env, "pinItem"), 
+                Napi::Function::New(env, PinItem, "pinItem"));
+    exports.Set(Napi::String::New(env, "unpinItem"), 
+                Napi::Function::New(env, UnpinItem, "unpinItem"));
+    exports.Set(Napi::String::New(env, "deleteItem"), 
+                Napi::Function::New(env, DeleteItem, "deleteItem"));
+    exports.Set(Napi::String::New(env, "searchHistory"), 
+                Napi::Function::New(env, SearchHistory, "searchHistory"));
     return exports;
 }
 
