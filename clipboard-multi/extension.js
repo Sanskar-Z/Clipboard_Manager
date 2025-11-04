@@ -124,8 +124,20 @@ function activate(context) {
 // --------------------------------------------------------------------------
 
 function getCleanLabel(item) {
+  // If no item or label, return empty
   if (!item?.label) return '';
-  return item.label.replace(/^\d+\.\s*/, ''); // remove index prefix like "1. text"
+  
+  // Get the full text from tooltip which contains the complete content
+  const tooltipText = item.tooltip || '';
+  const match = tooltipText.match(/(?:📍 Pinned item|📋 History item)\n\n([\s\S]+)/);
+  
+  // If we found the full text in tooltip, use that
+  if (match) {
+    return match[1];
+  }
+  
+  // Fallback to label if tooltip parsing fails
+  return item.label.replace(/^\d+\.\s*/, '');
 }
 
 function register(context, command, callback) {
