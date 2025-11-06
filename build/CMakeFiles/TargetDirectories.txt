@@ -1,3 +1,0 @@
-D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/clipboard_manager.dir
-D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/edit_cache.dir
-D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/rebuild_cache.dir

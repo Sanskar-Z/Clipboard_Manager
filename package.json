@@ -1,0 +1,25 @@
+{
+  "name": "clipboard-manager-native",
+  "version": "1.0.0",
+  "description": "Native C++ addon for Clipboard Manager VS Code Extension",
+  "main": "build/Release/clipboard_addon.node",
+  "scripts": {
+    "install": "node-gyp rebuild",
+    "build": "node-gyp rebuild",
+    "rebuild": "node-gyp rebuild",
+    "clean": "node-gyp clean",
+    "configure": "node-gyp configure",
+    "test": "node test/test.js"
+  },
+  "gypfile": true,
+  "dependencies": {
+    "node-addon-api": "^7.0.0",
+    "bindings": "^1.5.0"
+  },
+  "devDependencies": {
+    "node-gyp": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
