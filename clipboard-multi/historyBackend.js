@@ -1,20 +1,41 @@
 const fs = require('fs');
 const path = require('path');
-const clipboardAddon = require('bindings')('clipboard_addon');
 
+let clipboardAddon = null;
 let HISTORY_FILE = '';
 
+// Try to load the native addon
+try {
+  clipboardAddon = require('bindings')('clipboard_addon');
+} catch (err) {
+  console.error('[Clipboard Manager] Failed to load native addon:', err.message);
+  console.error('[Clipboard Manager] Please run "npm run build" in the extension root directory');
+}
+
 function init(filePath) {
+  if (!clipboardAddon) {
+    throw new Error('Native addon not loaded. Please build the extension first.');
+  }
+  
   HISTORY_FILE = path.dirname(filePath);
+  
+  // Ensure data directory exists
+  if (!fs.existsSync(HISTORY_FILE)) {
+    fs.mkdirSync(HISTORY_FILE, { recursive: true });
+  }
+  
   try {
     clipboardAddon.init(HISTORY_FILE);
+    console.log('[Clipboard Manager] Initialized with data directory:', HISTORY_FILE);
   } catch (err) {
     console.error('[Clipboard Manager] Failed to initialize native addon:', err);
+    throw err;
   }
 }
 
 function saveToSlot(slot, text) {
-  if (!text) return;
+  if (!clipboardAddon) return false;
+  if (!text) return false;
   try {
     clipboardAddon.saveToSlot(slot, text);
     addToHistory(text);
@@ -26,6 +47,7 @@ function saveToSlot(slot, text) {
 }
 
 function getFromSlot(slot) {
+  if (!clipboardAddon) return null;
   try {
     return clipboardAddon.getFromSlot(slot);
   } catch (err) {
@@ -35,7 +57,8 @@ function getFromSlot(slot) {
 }
 
 function addToHistory(text) {
-  if (!text || text.trim() === '') return;
+  if (!clipboardAddon) return false;
+  if (!text || text.trim() === '') return false;
   try {
     // Clean any existing number prefixes or display artifacts
     const cleanText = cleanDisplayText(text);
@@ -80,6 +103,7 @@ function findItemIndex(history, text) {
 }
 
 function pinItem(text) {
+  if (!clipboardAddon) return false;
   try {
     const history = clipboardAddon.getHistory();
     const index = findItemIndex(history, text);
@@ -95,6 +119,7 @@ function pinItem(text) {
 }
 
 function unpinItem(text) {
+  if (!clipboardAddon) return false;
   try {
     const history = clipboardAddon.getHistory();
     const index = findItemIndex(history, text);
@@ -110,6 +135,7 @@ function unpinItem(text) {
 }
 
 function deleteItem(text) {
+  if (!clipboardAddon) return false;
   try {
     const history = clipboardAddon.getHistory();
     const index = findItemIndex(history, text);
@@ -126,6 +152,7 @@ function deleteItem(text) {
 }
 
 function search(query) {
+  if (!clipboardAddon) return [];
   try {
     if (!query) {
       return clipboardAddon.getHistory();
@@ -138,6 +165,9 @@ function search(query) {
 }
 
 function getAll() {
+  if (!clipboardAddon) {
+    return { slots: {}, history: [], pinned: [] };
+  }
   try {
     const history = clipboardAddon.getHistory();
     const slots = {};
