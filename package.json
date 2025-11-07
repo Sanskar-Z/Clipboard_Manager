@@ -1,0 +1,20 @@
+{
+  "name": "clipboard-manager",
+  "displayName": "Clipboard Manager",
+  "version": "0.1.0",
+  "description": "A modern clipboard manager for VS Code with multi-slot copy, history, and pinning features",
+  "publisher": "your-name",
+  "private": true,
+  "author": "Sanskar-Z",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sanskar-Z/Clipboard_Manager.git"
+  },
+  "workspaces": [
+    "clipboard-multi"
+  ],
+  "dependencies": {
+    "node-addon-api": "^8.5.0"
+  }
+}

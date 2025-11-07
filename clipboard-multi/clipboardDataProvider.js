@@ -65,7 +65,7 @@ class ClipboardDataProvider {
 
         const item = new vscode.TreeItem(displayText, vscode.TreeItemCollapsibleState.None);
         item.iconPath = new vscode.ThemeIcon('pin');
-        item.tooltip = `📍 Pinned item\n\n${text}`; // Store original text in tooltip
+        item.tooltip = `📍 Pinned item\n\n${cleanText}`;
         item.contextValue = 'pinnedItem';
         item.description = `#${index + 1}`;  // Show index as description
         item.command = {
@@ -101,7 +101,7 @@ class ClipboardDataProvider {
 
         const item = new vscode.TreeItem(displayText, vscode.TreeItemCollapsibleState.None);
         item.iconPath = new vscode.ThemeIcon('clock');
-        item.tooltip = `� History item\n\n${text}`; // Store original text in tooltip
+        item.tooltip = `📄 Clipboard item\n\n${cleanText}`;
         item.contextValue = 'historyItem';
         item.description = `#${index + 1}`;  // Show index as description
         item.command = {

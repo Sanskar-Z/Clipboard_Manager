@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Coding\College_CP\Clipboard_Manager (3)\Clipboard_Manager_copy_clone\build\CMakeFiles\4e9eac38a5fbd0dec92e29621aa55f4b\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{A13A2678-60EB-356C-81A8-DC2FD1C8755E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

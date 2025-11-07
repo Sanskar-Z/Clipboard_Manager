@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\Coding\College_CP\Clipboard_Manager (3)\Clipboard_Manager_copy_clone\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Coding\College_CP\Clipboard_Manager (3)\Clipboard_Manager_copy_clone\src\history_manager\HistoryManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Coding\College_CP\Clipboard_Manager (3)\Clipboard_Manager_copy_clone\src\clipboard_monitor\ClipboardMonitor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Coding\College_CP\Clipboard_Manager (3)\Clipboard_Manager_copy_clone\src\cli\CLI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Coding\College_CP\Clipboard_Manager (3)\Clipboard_Manager_copy_clone\src\advanced_features\AdvancedFeatures.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Coding\College_CP\Clipboard_Manager (3)\Clipboard_Manager_copy_clone\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{E56BBCCE-3E51-3695-9540-C996067A5F27}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

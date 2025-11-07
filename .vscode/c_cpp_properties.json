@@ -4,11 +4,21 @@
       "name": "Win64",
       "includePath": [
         "${workspaceFolder}/**",
+        "${workspaceFolder}/clipboard-multi/node_modules/node-addon-api",
+        "${env:LOCALAPPDATA}/node-gyp/Cache/22.17.0/include/node",
         "C:/msys64/ucrt64/include/c++/15.2.0",
         "C:/msys64/ucrt64/include/c++/15.2.0/x86_64-w64-mingw32",
         "C:/msys64/ucrt64/include",
         "C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include"
       ],
+      "browse": {
+        "path": [
+          "${workspaceFolder}",
+          "${workspaceFolder}/clipboard-multi/node_modules/node-addon-api",
+          "${env:LOCALAPPDATA}/node-gyp/Cache/22.17.0/include/node"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      },
       "defines": [
         "_DEBUG",
         "UNICODE",

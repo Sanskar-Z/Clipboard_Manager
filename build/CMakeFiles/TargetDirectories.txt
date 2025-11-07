@@ -1,3 +1,3 @@
-D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/clipboard_manager.dir
-D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/edit_cache.dir
-D:/Coding/College_CP/Clipboard_Manager/build/CMakeFiles/rebuild_cache.dir
+D:/Coding/College_CP/Clipboard_Manager (3)/Clipboard_Manager_copy_clone/build/CMakeFiles/clipboard_manager.dir
+D:/Coding/College_CP/Clipboard_Manager (3)/Clipboard_Manager_copy_clone/build/CMakeFiles/ALL_BUILD.dir
+D:/Coding/College_CP/Clipboard_Manager (3)/Clipboard_Manager_copy_clone/build/CMakeFiles/ZERO_CHECK.dir
