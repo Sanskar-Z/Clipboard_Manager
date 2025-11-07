@@ -2,12 +2,11 @@
   "type": "commonjs",
   "name": "clipboard-multi",
   "displayName": "Clipboard Manager (Activity Bar)",
-  "version": "1.0.0",
+  "version": "0.0.7",
   "publisher": "your-name",
   "description": "A modern, user-friendly Clipboard Manager with multi-slot copy, pinning, search, and history management inside VS Code.",
   "engines": {
-    "vscode": "^1.80.0",
-    "node": ">=16.0.0"
+    "vscode": "^1.80.0"
   },
   "icon": "images/icon.svg",
   "main": "./extension.js",
@@ -110,16 +109,9 @@
     "node-addon-api": "^7.0.0",
     "bindings": "^1.5.0"
   },
-  "devDependencies": {
-    "@types/vscode": "^1.80.0",
-    "@types/node": "^18.0.0",
-    "node-gyp": "^10.0.0"
-  },
   "scripts": {
-    "postinstall": "cd .. && node-gyp rebuild",
-    "build": "cd .. && node-gyp rebuild",
-    "rebuild": "cd .. && node-gyp rebuild",
-    "clean": "cd .. && node-gyp clean"
+    "install": "node-gyp rebuild",
+    "build": "node-gyp rebuild"
   },
   "gypfile": true
 }

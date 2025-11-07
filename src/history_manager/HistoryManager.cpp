@@ -253,7 +253,6 @@ std::optional<std::string> HistoryManager::getSlot(int slot) {
         }
     }
     
-    if (content.empty()) return std::nullopt;
     return content;
 }
 

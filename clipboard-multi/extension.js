@@ -11,31 +11,20 @@ const ClipboardDataProvider = require('./clipboardDataProvider');
 let dataProvider;
 
 function activate(context) {
-  try {
-    const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || __dirname;
-    const dataDir = path.join(workspacePath, '.clipboard_data');
-    
-    // ✅ Ensure data directory exists
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
+  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath || __dirname;
+  const historyFilePath = path.join(workspacePath, 'clipboard_history.json');
 
-    // ✅ Initialize backend
-    const historyFilePath = path.join(dataDir, 'history.txt');
-    try {
-      historyBackend.init(historyFilePath);
-      console.log('✅ Clipboard Manager backend initialized successfully');
-    } catch (err) {
-      vscode.window.showErrorMessage(
-        `❌ Clipboard Manager: Failed to initialize. ${err.message}\n\nPlease run "npm run build" in the extension directory.`
-      );
-      console.error('Failed to initialize backend:', err);
-      return;
-    }
+  // ✅ Ensure history file exists
+  if (!fs.existsSync(historyFilePath)) {
+    fs.writeFileSync(historyFilePath, JSON.stringify({ slots: {}, pinned: [], history: [] }, null, 2));
+  }
 
-    // ✅ Create and register TreeDataProvider
-    dataProvider = new ClipboardDataProvider(historyBackend);
-    vscode.window.registerTreeDataProvider('clipboardView', dataProvider);
+  // ✅ Initialize backend
+  historyBackend.init(historyFilePath);
+
+  // ✅ Create and register TreeDataProvider
+  dataProvider = new ClipboardDataProvider(historyBackend);
+  vscode.window.registerTreeDataProvider('clipboardView', dataProvider);
 
   // --------------------------------------------------------------------------
   // 🧩 Commands
@@ -127,12 +116,7 @@ function activate(context) {
     if (query !== undefined) dataProvider.search(query);
   });
 
-    console.log('✅ Clipboard Manager activated successfully.');
-    vscode.window.showInformationMessage('📋 Clipboard Manager is ready!');
-  } catch (err) {
-    console.error('❌ Failed to activate Clipboard Manager:', err);
-    vscode.window.showErrorMessage(`❌ Clipboard Manager activation failed: ${err.message}`);
-  }
+  console.log('✅ Clipboard Manager activated successfully.');
 }
 
 // --------------------------------------------------------------------------
